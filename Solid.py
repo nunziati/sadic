@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 class Solid(ABC):
+    @abstractmethod
     def __init__(self, *args):
         pass
     
