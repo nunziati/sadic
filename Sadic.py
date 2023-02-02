@@ -1,7 +1,9 @@
+from Multisphere import Multisphere
+
 def find_reference_radius(multisphere, phi_values, theta_values):
     pass
 
-def find_depth_index(multisphere, point, reference_radius)
+def find_depth_index(multisphere, point, reference_radius):
     pass
 
 def sadic(protein):
