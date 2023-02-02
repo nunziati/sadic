@@ -4,7 +4,7 @@ from numbers import Number
 from numpy.typing import NDArray
 import numpy as np
 
-NumpyNumberType = np.int8 | np.int16 | np.int32 | np.int64 | np.int128 | np.int256 | np.uint8 | np.uint16 | np.uint32 | np.uint64 | np.uint128 | np.uint256 | np.float16 | np.float32 | np.float64 | np.float128 | np.float256
+NumpyNumberType = np.int8 | np.int16 | np.int32 | np.int64 | np.uint8 | np.uint16 | np.uint32 | np.uint64 | np.float16 | np.float32 | np.float64 | np.float128
 NumberType = NumpyNumberType | float | int
 PointType = Sequence[NumberType] | NDArray[NumpyNumberType]
 PointSequenceType = Sequence[PointType] | NDArray[NumpyNumberType]

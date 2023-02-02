@@ -1,5 +1,5 @@
-from .typing import PointType
-from .typing import is_PointType
+from mytyping import PointType
+from mytyping import is_PointType
 
 def point_square_distance(x, y) -> float:
     if not is_PointType(x) or not is_PointType(y):

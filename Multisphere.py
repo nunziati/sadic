@@ -4,20 +4,26 @@ from PDBEntity import PDBEntity
 from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
 
-from .typing import PointType, PointSequenceType, NumberSequenceType
-from .typing import is_PointType, is_PointSequenceType, is_NumberSequenceType
+from tqdm import tqdm
+
+from mytyping import PointType, PointSequenceType, NumberSequenceType
+from mytyping import is_PointType, is_PointSequenceType, is_NumberSequenceType
 
 from utils import point_square_distance
 
 from collections.abc import Sequence
 
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
+
+
+# MODIFICARE TUTTO IN MODO CHE FUNZIONI SOLO CON ARRAY NUMPY, PER EFFICIENZA
+
 
 
 class Multisphere(Solid):
     def __init__(self, *args) -> None:
-        super().__init__(*args)
+        super().__init__(args)
 
         if len(args) == 1:
             arg = args[0]
@@ -49,6 +55,9 @@ class Multisphere(Solid):
 
         else:
             raise TypeError("Expected 1 or 2 arguments, got {}".format(len(args)))
+
+    def get_extreme_coordinates(self, *args):
+        pass
 
     def build_empty(self, length: int) -> None:
         self.centers: NDArray[np.float32] = np.empty((length, 3), dtype=np.float32)
@@ -91,6 +100,21 @@ class Multisphere(Solid):
     def build_from_biopandas_protein(self, protein: PandasPdb) -> None:
         sadic_protein = PDBEntity(protein)
         self.build_from_sadic_protein(sadic_protein)
+
+    def is_inside_fast(self, points):
+        return (((points.reshape((-1, 1, 3)) - self.centers.reshape((1, -1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((1, -1)) ** 2).any(axis=1)
+    
+    def is_inside_exclusive(self, points):
+        print(points.shape)
+        output = np.empty(points.shape, dtype=bool)
+
+        for idx, point in tqdm(enumerate(points)):
+            for center, radius in zip(self.centers, self.radii):
+                if ((point - center) ** 2).sum() < radius ** 2:
+                    output[idx] = True
+                    break
+
+        return output
 
     def is_inside(self, arg: PointSequenceType | Sphere) -> NDArray[np.bool_]:
         if isinstance(arg, Sphere):
@@ -144,13 +168,13 @@ class Multisphere(Solid):
     def compute_voronoi(self) -> None:
         raise NotImplementedError
 
-    def get_all_centers(self) -> PointSequenceType:
+    def get_all_centers(self):
         return self.centers
     
-    def get_all_radii(self) -> NumberSequenceType:
+    def get_all_radii(self):
         return self.radii
 
-    def get_all_centers_and_radii(self) -> tuple[PointSequenceType, NumberSequenceType]:
+    def get_all_centers_and_radii(self):
         return self.get_all_centers(), self.get_all_radii()
 
     def get_voronoi_center(self, input_point: PointType) -> tuple[int, PointSequenceType]:
