@@ -21,6 +21,6 @@ class PDBEntity:
             "S": 1.8,
         }
 
-        probe_radius = 1.4
+        probe_radius = 1.52
 
         return np.array([vdw_radii[atom_type] + probe_radius for atom_type in self.atom_types])
