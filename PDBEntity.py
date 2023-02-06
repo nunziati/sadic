@@ -87,11 +87,6 @@ class PDBEntity:
 
         else:
             raise ValueError("mode must be one of 'biopandas', 'biopython', 'pdb', 'gz', 'url', 'code', or 'infer'")
-        self.entity: PandasPdb = pd().fetch_pdb(arg)
-        self.atom_types: NDArray[np.string_] = self.entity.df["ATOM"]["element_symbol"].to_numpy(dtype=np.string_)
-        self.atoms: NDArray[np.float32] = self.entity.df["ATOM"][["x_coord", "y_coord", "z_coord"]].to_numpy(dtype=np.float32)
-        self.last_probe_radius: float | None = None
-        self.radii: NDArray[np.float32] | None = None
 
     def complete_build_from_entity(self) -> None:
         self.atom_types: NDArray[np.string_] = self.entity.df["ATOM"]["element_symbol"].to_numpy(dtype=np.string_)
