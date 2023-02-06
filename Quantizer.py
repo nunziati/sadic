@@ -60,7 +60,6 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
         return grid[solid.is_inside(grid)], volume
 
 
-
 class RegularSizeCartesianQuantizer(CartesianQuantizer):
     def __init__(self, ):
         super().__init__()
@@ -82,8 +81,6 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         for step_type, step_number in zip(("rho", "theta", "phi"), (rho_steps_number, theta_steps_number, phi_steps_number)):
             if step_number < 1:
                 raise ValueError(f"{step_type} step number must be greater than 0")
-                
-        super().__init__()
 
         self.rho_steps_number = rho_steps_number
         self.theta_steps_number = theta_steps_number
@@ -101,6 +98,25 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         rho_values = np.linspace(min_rho, max_rho, self.rho_steps_number - 1, dtype=np.float32)
         theta_values = np.linspace(0, 2 * np.pi, self.theta_steps_number)
         phi_values = np.linspace(min_phi, max_phi, self.phi_steps_number - 1)
+
+    def get_surface_points(self, solid: Sphere):
+        rho = solid.radius
+        center = solid.center
+        
+        theta_values = np.linspace(0, 2 * np.pi - 2 * np.pi/self.theta_steps_number, self.theta_steps_number, dtype=np.float32)
+        phi_values = np.linspace(0, np.pi - 2 * np.pi/self.theta_steps_number, self.phi_steps_number, dtype=np.float32)
+
+        grid = np.stack(np.meshgrid(theta_values, phi_values), axis=-1).reshape((-1, 3))
+
+        return self.spherical_to_cartesian(rho, grid[1], grid[2], center)
+
+        
+    def spherical_to_cartesian(self, rho, theta, phi, center):
+        x = rho * np.sin(theta) * np.cos(phi)
+        y = rho * np.sin(theta) * np.sin(phi)
+        z = rho * np.cos(theta)
+
+        return np.stack([x, y, z], axis=-1) + center
 
 
 
