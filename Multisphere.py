@@ -6,78 +6,65 @@ from Bio.PDB.Structure import Structure
 
 from tqdm import tqdm
 
-from mytyping import PointType, PointSequenceType, NumberSequenceType
-from mytyping import is_PointType, is_PointSequenceType, is_NumberSequenceType
-
 from utils import point_square_distance
 
 from collections.abc import Sequence
 
 import numpy as np
+
 from numpy.typing import NDArray
+import typing as tp
 
-
-# MODIFICARE TUTTO IN MODO CHE FUNZIONI SOLO CON ARRAY NUMPY, PER EFFICIENZA
-
-
+# RINOMINA I FILE IN MINUSCOLO
+# IMPORTA DIRETTAMENTE I MODULI INTERI, INVECE DELLE FUNZIONI/CLASSI
+# METTI TUTTI I SOLIDI NELLO STESSO FILE
 
 class Multisphere(Solid):
-    def __init__(self, *args) -> None:
-        super().__init__(args)
-
-        if len(args) == 1:
-            arg = args[0]
-            if isinstance(arg, Sequence):
-                if isinstance(arg[0], Sphere):
-                    self.build_from_spheres(arg)
+    def __init__(self, arg1: Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32], arg2: None | NDArray[np.float32] = None ) -> None:
+        if arg2 is None:
+            if isinstance(arg1, Sequence):
+                if isinstance(arg1[0], Sphere):
+                    self.build_from_spheres(arg1)
                 else:
                     raise TypeError("Sequence argument must be a sequence of Spheres")
             
-            elif isinstance(arg, PDBEntity):
-                self.build_from_sadic_protein(arg)
+            elif isinstance(arg1, PDBEntity):
+                self.build_from_sadic_protein(arg1)
 
-            elif isinstance(arg, PandasPdb):
-                self.build_from_biopandas_protein(arg)
+            elif isinstance(arg1, PandasPdb):
+                self.build_from_biopandas_protein(arg1)
 
-            elif isinstance(arg, Structure):
-                self.build_from_biopython_protein(arg)
+            elif isinstance(arg1, Structure):
+                self.build_from_biopython_protein(arg1)
 
             else:
                 raise TypeError("Single argument must be a sequence of Spheres, PDBEntity, PandasPdb or Structure")
 
-        elif len(args) == 2:
-            arg1, arg2 = args
-            if is_PointSequenceType(arg1) and is_NumberSequenceType(arg2):
+        else:
+            if isinstance(arg1, np.ndarray):
                 self.build_from_centers_and_radii(arg1, arg2)
             
             else:
-                raise TypeError("2 arguments must be sequences of points and radii")
-
-        else:
-            raise TypeError("Expected 1 or 2 arguments, got {}".format(len(args)))
-
-    def get_extreme_coordinates(self, *args):
-        pass
+                raise TypeError("2 arguments must be numpy.ndarray objects")        
 
     def build_empty(self, length: int) -> None:
         self.centers: NDArray[np.float32] = np.empty((length, 3), dtype=np.float32)
         self.radii: NDArray[np.float32] = np.empty((length,), dtype=np.float32)
-        self.voronoi = None
+        self.voronoi: None = None
+        self.extreme_coordinates: NDArray[np.float32] | None = None
 
-    def build_from_centers_and_radii(self, centers: PointSequenceType, radii: NumberSequenceType) -> None:
-        if len(centers) == 0 or len(radii) == 0:
-            raise ValueError("points and radii must be non-empty")
-        if len(centers) != len(radii):
-            raise ValueError("points and radii must have the same length")
-        for point in centers:
-            if len(point) != 3:
-                raise ValueError("Each point in points must be a sequence of length 3")
+    def build_from_centers_and_radii(self, centers: NDArray[np.float32], radii: NDArray[np.float32]) -> None:
+        if centers.shape[1] != 3:
+            raise ValueError("centers must be numpy.ndarray objects with shape (n, 3)")
 
-        self.build_empty(len(centers))
+        if radii.shape[1]!= 3:
+            raise ValueError("radii must be numpy.ndarray objects with shape (n,)")
 
-        for idx, (point, radius) in enumerate(zip(centers, radii)):
-            self.centers[idx] = point
-            self.radii[idx] = radius
+        if centers.shape[0] != radii.shape[0]:
+            raise ValueError("first argument and second argument must have the same number of rows")
+
+        self.centers: NDArray[np.float32] = centers
+        self.radii: NDArray[np.float32] = radii
 
     def build_from_spheres(self, spheres: Sequence[Sphere]) -> None:
         if len(spheres) == 0:
@@ -94,12 +81,15 @@ class Multisphere(Solid):
         self.radii: NDArray[np.float32] = protein.get_radii()
 
     def build_from_biopython_protein(self, protein: Structure) -> None:
-        sadic_protein = PDBEntity(protein)
+        sadic_protein: PDBEntity = PDBEntity(protein)
         self.build_from_sadic_protein(sadic_protein)
 
     def build_from_biopandas_protein(self, protein: PandasPdb) -> None:
-        sadic_protein = PDBEntity(protein)
+        sadic_protein: PDBEntity = PDBEntity(protein)
         self.build_from_sadic_protein(sadic_protein)
+
+    def get_extreme_coordinates(self) -> NDArray[np.float32]:
+        pass
 
     def is_inside_fast(self, points):
         return (((points.reshape((-1, 1, 3)) - self.centers.reshape((1, -1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((1, -1)) ** 2).any(axis=1)
