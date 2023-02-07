@@ -8,24 +8,30 @@ from Solid import Solid
 
 class Quantizer(ABC):
     @abstractmethod
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @abstractmethod
     def get_points_and_volumes(self, solid) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         pass
 
+    def get_extreme_coordinates(self, solid: Solid):
+        if hasattr(solid, "get_extreme_coordinates"):
+            return solid.get_extreme_coordinates()
+        else:
+            raise NotImplementedError
+
 class CartesianQuantizer(Quantizer):
     @abstractmethod
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @abstractmethod
-    def get_points_and_volumes(self, *args) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
+    def get_points_and_volumes(self, arg: Solid) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         pass
 
 class RegularStepsCartesianQuantizer(CartesianQuantizer):
-    def __init__(self, steps_number: int | tuple[int, int, int]):
+    def __init__(self, steps_number: int | tuple[int, int, int]) -> None:
         x_steps_number: int
         y_steps_number: int
         z_steps_number: int
@@ -40,16 +46,9 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
             if step_number < 1:
                 raise ValueError(f"{step_type} step number must be greater than 0")
 
-        self.x_steps_number = x_steps_number
-        self.y_steps_number = y_steps_number
-        self.z_steps_number = z_steps_number
-
-    def get_extreme_coordinates(self, solid: Solid):
-        # check if solid has method get_extreme_coordinates
-        if hasattr(solid, "get_extreme_coordinates"):
-            return solid.get_extreme_coordinates()
-        else:
-            raise NotImplementedError
+        self.x_steps_number: int = x_steps_number
+        self.y_steps_number: int = y_steps_number
+        self.z_steps_number: int = z_steps_number
 
     def get_points_and_volumes(self, solid: Solid) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         extremes = self.get_extreme_coordinates(solid)
@@ -65,23 +64,27 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
 
 
 class RegularSizeCartesianQuantizer(CartesianQuantizer):
-    def __init__(self, ):
+    def __init__(self) -> None:
         pass
-
-    def get_points_and_volumes(self):
+    
+    def get_points_and_volumes(self): # -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         pass
 
 class SphericalQuantizer(Quantizer):
     @abstractmethod
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @abstractmethod
-    def get_points_and_volumes(self, *args):
+    def get_points_and_volumes(self, *args) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
+        pass
+
+    @abstractmethod
+    def get_surface_points(self, solid: Sphere) -> NDArray[np.float32]:
         pass
 
 class RegularStepsSphericalQuantizer(SphericalQuantizer):
-    def __init__(self, rho_steps_number: int, theta_steps_number: int, phi_steps_number: int):            
+    def __init__(self, rho_steps_number: int, theta_steps_number: int, phi_steps_number: int) -> None:            
         for step_type, step_number in zip(("rho", "theta", "phi"), (rho_steps_number, theta_steps_number, phi_steps_number)):
             if step_number < 1:
                 raise ValueError(f"{step_type} step number must be greater than 0")
@@ -90,7 +93,7 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         self.theta_steps_number = theta_steps_number
         self.phi_steps_number = phi_steps_number
 
-    def get_points_and_volumes(self, sphere: Sphere):
+    def get_points_and_volumes(self, sphere: Sphere): # -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         radius = sphere.radius
         center = sphere.center
         
@@ -103,7 +106,7 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         theta_values = np.linspace(0, 2 * np.pi, self.theta_steps_number)
         phi_values = np.linspace(min_phi, max_phi, self.phi_steps_number - 1)
 
-    def get_surface_points(self, solid: Sphere):
+    def get_surface_points(self, solid: Sphere) -> NDArray[np.float32]:
         rho = solid.radius
         center = solid.center
         
@@ -114,8 +117,7 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
 
         return self.spherical_to_cartesian(rho, grid[1], grid[2], center)
 
-        
-    def spherical_to_cartesian(self, rho, theta, phi, center):
+    def spherical_to_cartesian(self, rho, theta, phi, center) -> NDArray[np.float32]:
         x = rho * np.sin(theta) * np.cos(phi)
         y = rho * np.sin(theta) * np.sin(phi)
         z = rho * np.cos(theta)
@@ -125,29 +127,30 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
 
 
 class RegularSizeSphericalQuantizer(SphericalQuantizer):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def get_points(self, *args):
         pass
 
 class AdaptiveSphericalQuantizer(SphericalQuantizer):
-    def __init__(self):
-        super().__init__()
+    def __init__(self) -> None:
+        pass
 
     def get_points(self, *args):
         pass
 
 class SamplerQuantizer(Quantizer):
-    def __init__(self):
-        super().__init__()
+    @abstractmethod
+    def __init__(self) -> None:
+        pass
 
     @abstractmethod
     def get_points(self, *args):
         pass
 
 class SphereSamplerQuantizer(SamplerQuantizer):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def get_points(self, *args):

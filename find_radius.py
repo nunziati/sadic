@@ -56,6 +56,7 @@ print(max_distance)
 
 #max_sphere = Sphere(np.array([0., 0., 0.]), max_distance/2 + 2)
 """
+
 min_radius = 1.52
 max_radius = min_radius
 max_radius_atom = 0
@@ -68,7 +69,7 @@ for idx in range(centers.shape[0]):
 
     sphere = Sphere(centers[idx], radius)
     points = quantizer.get_surface_points(sphere)
-    while protein_multisphere.is_inside_fast(points).all():
+    while protein_multisphere.is_inside(points).all():
         radius = radius * 2
         sphere = Sphere(centers[idx], radius)
         points = quantizer.get_surface_points(sphere)

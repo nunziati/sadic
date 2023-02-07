@@ -7,7 +7,7 @@ import re
 from numpy.typing import NDArray
 
 class PDBEntity:
-    _pdb_code_regex = r"\d[a-zA-Z]{3}"
+    _pdb_code_regex = r"[1-9][a-zA-Z0-9]{3}"
     _pdb_url_regex = r"(http[s]?://)?www.rcsb.org/structure/" + _pdb_code_regex + r"[/]?"
 
     vdw_radii_2004 = {

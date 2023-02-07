@@ -7,14 +7,11 @@ from Bio.PDB.Structure import Structure
 
 from tqdm import tqdm
 
-from utils import point_square_distance
-
 from collections.abc import Sequence
 
 import numpy as np
 
 from numpy.typing import NDArray
-import typing as tp
 
 # RINOMINA I FILE IN MINUSCOLO
 # IMPORTA DIRETTAMENTE I MODULI INTERI, INVECE DELLE FUNZIONI/CLASSI
@@ -125,10 +122,9 @@ class Multisphere(Solid):
 
         return (((points.reshape((1, -1, 3)) - self.centers.reshape((-1, 1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((-1, 1)) ** 2).any(axis=0)
 
-    def sphere_is_inside(self, sphere: Sphere, quantizer: Quantizer | None = None, get_volumes: bool = False) -> NDArray[np.bool_] | tuple[NDArray[np.bool_], NDArray[np.float32]]:
-        if quantizer is None:
-            quantizer = Multisphere.default_quantizer_class(**Multisphere.default_quantizer_kwargs)
-            
+    def sphere_is_inside(self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False) -> NDArray[np.bool_] | tuple[NDArray[np.bool_], NDArray[np.float32]]:
+        quantizer: Quantizer = Multisphere.default_quantizer_class(**Multisphere.default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
+
         points, volumes = quantizer.get_points_and_volumes(sphere)
 
         if get_volumes:

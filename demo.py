@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 protein = PDBEntity("1GWD")
 max_distance = 103.
-probe_radius = 11.06
+probe_radius = 11.06 # r0
 steps_number = 16 # nice value = 32
 protein_multisphere = Multisphere(protein)
 
