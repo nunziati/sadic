@@ -1,6 +1,7 @@
 from Solid import Solid
 from Sphere import Sphere
 from PDBEntity import PDBEntity
+from Quantizer import Quantizer, RegularStepsCartesianQuantizer
 from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
 
@@ -20,6 +21,9 @@ import typing as tp
 # METTI TUTTI I SOLIDI NELLO STESSO FILE
 
 class Multisphere(Solid):
+    default_quantizer_class = RegularStepsCartesianQuantizer
+    default_quantizer_kwargs = {"steps_number": 32}
+
     def __init__(self, arg1: Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32], arg2: None | NDArray[np.float32] = None ) -> None:
         if arg2 is None:
             if isinstance(arg1, Sequence):
@@ -48,6 +52,9 @@ class Multisphere(Solid):
                 raise TypeError("2 arguments must be numpy.ndarray objects")        
 
     def build_empty(self, length: int) -> None:
+        if length <= 0:
+            raise ValueError("length must be a positive integer")
+
         self.centers: NDArray[np.float32] = np.empty((length, 3), dtype=np.float32)
         self.radii: NDArray[np.float32] = np.empty((length,), dtype=np.float32)
         self.voronoi: None = None
@@ -89,71 +96,45 @@ class Multisphere(Solid):
         self.build_from_sadic_protein(sadic_protein)
 
     def get_extreme_coordinates(self) -> NDArray[np.float32]:
-        pass
+        if self.extreme_coordinates is None:
+            self.extreme_coordinates = np.empty((3, 2), dtype=np.float32)
+            self.extreme_coordinates[0][0] = np.min(self.centers[:, 0] - self.radii)
+            self.extreme_coordinates[0][1] = np.max(self.centers[:, 0] + self.radii)
+            self.extreme_coordinates[1][0] = np.min(self.centers[:, 1] - self.radii)
+            self.extreme_coordinates[1][1] = np.max(self.centers[:, 1] + self.radii)
+            self.extreme_coordinates[2][0] = np.min(self.centers[:, 2] - self.radii)
+            self.extreme_coordinates[2][1] = np.max(self.centers[:, 2] + self.radii)
 
-    def is_inside_fast(self, points):
-        return (((points.reshape((-1, 1, 3)) - self.centers.reshape((1, -1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((1, -1)) ** 2).any(axis=1)
-    
-    def is_inside_exclusive(self, points):
-        print(points.shape)
-        output = np.empty(points.shape, dtype=bool)
+        return self.extreme_coordinates
 
-        for idx, point in tqdm(enumerate(points)):
-            for center, radius in zip(self.centers, self.radii):
-                if ((point - center) ** 2).sum() < radius ** 2:
-                    output[idx] = True
-                    break
-
-        return output
-
-    def is_inside(self, arg: PointSequenceType | Sphere) -> NDArray[np.bool_]:
+    def is_inside(self, arg: NDArray[np.float32] | Sphere, get_volumes: bool = False) -> NDArray[np.bool_] | tuple[NDArray[np.bool_], NDArray[np.float32]]:
         if isinstance(arg, Sphere):
-            return self.sphere_is_inside(arg)
+            return self.sphere_is_inside(arg, get_volumes=get_volumes)
 
-        if is_PointSequenceType(arg):
+        elif isinstance(arg, np.ndarray):
             return self.point_is_inside(arg)
 
-        raise TypeError("Argument must be a sequence or a Sphere")
+        raise TypeError("Argument must be a numpy.ndarray or a Sphere")
 
-    def point_is_inside(self, points: PointSequenceType) -> NDArray[np.bool_]:
-        if len(points) == 0:
+    def point_is_inside(self, points: NDArray[np.float32]) -> NDArray[np.bool_]:
+        if points.shape[0] <= 0:
             raise ValueError("points must be non-empty")
         
-        for point in points:
-            if is_PointType(point):
-                raise ValueError("Each point in points must be a sequence of length 3")
+        if points.shape[1] != 3:
+            raise ValueError("points must be a numpy.ndarray with shape (n, 3)")
 
-        output: NDArray[np.bool_] = np.empty(len(points), dtype=np.bool_)
-        for idx, point in enumerate(points):
-            output[idx] = self.single_point_is_inside(point)
+        return (((points.reshape((1, -1, 3)) - self.centers.reshape((-1, 1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((-1, 1)) ** 2).any(axis=0)
 
-        return output
+    def sphere_is_inside(self, sphere: Sphere, quantizer: Quantizer | None = None, get_volumes: bool = False) -> NDArray[np.bool_] | tuple[NDArray[np.bool_], NDArray[np.float32]]:
+        if quantizer is None:
+            quantizer = Multisphere.default_quantizer_class(**Multisphere.default_quantizer_kwargs)
+            
+        points, volumes = quantizer.get_points_and_volumes(sphere)
 
-    def single_point_is_inside(self, input_point: PointType) -> bool:
-        if not is_PointType(input_point):
-            raise TypeError("Argument must be a sequence of length 3")
-        
-        candidate_centers: PointSequenceType
-        candidate_radii: NumberSequenceType
-        candidate_centers, candidate_radii = self.get_candidate_centers_and_radii(input_point, subset="best")        
+        if get_volumes:
+            return self.point_is_inside(points), volumes
 
-        for point, radius in zip(candidate_centers, candidate_radii):
-            if point_square_distance(input_point, point) <= radius ** 2:
-                return True
-
-        return False
-
-    def sphere_is_inside(self, sphere: Sphere) -> NDArray[np.bool_]:
-        raise NotImplementedError
-
-    """def is_buried(self, arg) -> bool:
-        raise NotImplementedError
-
-    def point_is_buried(self, points) -> bool:
-        raise NotImplementedError
-
-    def sphere_is_buried(self, sphere) -> bool:
-        raise NotImplementedError"""
+        return self.point_is_inside(points)
 
     def compute_voronoi(self) -> None:
         raise NotImplementedError
@@ -167,46 +148,35 @@ class Multisphere(Solid):
     def get_all_centers_and_radii(self):
         return self.get_all_centers(), self.get_all_radii()
 
-    def get_voronoi_center(self, input_point: PointType) -> tuple[int, PointSequenceType]:
+    def get_voronoi_center(self, input_point):
         raise NotImplementedError
 
-    def get_voronoi_radius(self, arg: int | PointType) -> NumberSequenceType:
+    def get_voronoi_radius(self, arg):
         raise NotImplementedError
     
-    def get_voronoi_center_and_radius(self, input_point: PointType) -> tuple[int, PointSequenceType, NumberSequenceType]:
-        if self.voronoi is None:
-            raise Exception("Must call compute_voronoi before calling get_voronoi_center_and_radius")
-        
-        if not is_PointType(input_point):
-            raise TypeError("Argument must be a sequence of length 3 or None")
-
-        voronoi_index: int
-        voronoi_center: PointSequenceType
-        voronoi_index, voronoi_center = self.get_voronoi_center(input_point)
-        voronoi_radius: NumberSequenceType = self.get_voronoi_radius(voronoi_index)
-        
-        return voronoi_index, voronoi_center, voronoi_radius
-
-    def get_surface_centers(self) -> PointSequenceType:
+    def get_voronoi_center_and_radius(self, input_point):
         raise NotImplementedError
 
-    def get_surface_radii(self) -> NumberSequenceType:
+    def get_surface_centers(self):
         raise NotImplementedError
 
-    def get_surface_centers_and_radii(self) -> tuple[PointSequenceType, NumberSequenceType]:
+    def get_surface_radii(self):
+        raise NotImplementedError
+
+    def get_surface_centers_and_radii(self):
         return self.get_surface_centers(), self.get_surface_radii()
 
-    def get_internal_centers(self) -> PointSequenceType:
+    def get_internal_centers(self):
         raise NotImplementedError
 
-    def get_internal_radii(self) -> NumberSequenceType:
+    def get_internal_radii(self):
         raise NotImplementedError
         
-    def get_internal_centers_and_radii(self) -> tuple[PointSequenceType, NumberSequenceType]:
+    def get_internal_centers_and_radii(self):
         return self.get_internal_centers(), self.get_internal_radii()
 
-    def get_candidate_centers_and_radii(self, input_point: PointType | None = None, subset: str = "best") -> tuple[PointSequenceType, NumberSequenceType]:
-        if input_point and not is_PointType(input_point):
+    def get_candidate_centers_and_radii(self, input_point = None, subset = "best"):
+        """if input_point and not is_PointType(input_point):
             raise TypeError("Argument must be a sequence of length 3 or None")
         
         if subset == "best":
@@ -229,4 +199,4 @@ class Multisphere(Solid):
         elif subset == "internal":
             return self.get_internal_centers_and_radii()
         else:
-            raise ValueError("subset must be one of 'all', 'voronoi', 'surface', 'internal', 'best'")
+            raise ValueError("subset must be one of 'all', 'voronoi', 'surface', 'internal', 'best'")"""

@@ -12,30 +12,33 @@ class Quantizer(ABC):
         pass
 
     @abstractmethod
-    def get_points_and_volumes(self, x):
+    def get_points_and_volumes(self, solid) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         pass
 
 class CartesianQuantizer(Quantizer):
     @abstractmethod
     def __init__(self):
-        super().__init__()
+        pass
 
     @abstractmethod
-    def get_points_and_volumes(self, *args) -> tuple[NDArray[np.float32], float]:
+    def get_points_and_volumes(self, *args) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         pass
 
 class RegularStepsCartesianQuantizer(CartesianQuantizer):
     def __init__(self, steps_number: int | tuple[int, int, int]):
+        x_steps_number: int
+        y_steps_number: int
+        z_steps_number: int
+
         if isinstance(steps_number, int):
             x_steps_number, y_steps_number, z_steps_number = steps_number, steps_number, steps_number
+        
         else:
             x_steps_number, y_steps_number, z_steps_number = steps_number
             
         for step_type, step_number in zip(("x", "y", "z"), (x_steps_number, y_steps_number, z_steps_number)):
             if step_number < 1:
                 raise ValueError(f"{step_type} step number must be greater than 0")
-                
-        super().__init__()
 
         self.x_steps_number = x_steps_number
         self.y_steps_number = y_steps_number
@@ -48,7 +51,7 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
         else:
             raise NotImplementedError
 
-    def get_points_and_volumes(self, solid: Solid) -> tuple[NDArray[np.float32], float]:
+    def get_points_and_volumes(self, solid: Solid) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         extremes = self.get_extreme_coordinates(solid)
         x_values = np.linspace(extremes[0][0], extremes[0][1], self.x_steps_number, dtype=np.float32)
         y_values = np.linspace(extremes[1][0], extremes[1][1], self.y_steps_number, dtype=np.float32)
@@ -57,12 +60,13 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
         volume = (x_values[1] - x_values[0]) * (y_values[1] - y_values[0]) * (z_values[1] - z_values[0])
         grid = np.stack(np.meshgrid(x_values, y_values, z_values), axis=-1).reshape((-1, 3))
 
-        return grid[solid.is_inside(grid)], volume
+        grid_inside = grid[solid.is_inside(grid)]
+        return grid_inside, np.full(grid_inside.shape, volume, dtype=np.float32)
 
 
 class RegularSizeCartesianQuantizer(CartesianQuantizer):
     def __init__(self, ):
-        super().__init__()
+        pass
 
     def get_points_and_volumes(self):
         pass
@@ -70,7 +74,7 @@ class RegularSizeCartesianQuantizer(CartesianQuantizer):
 class SphericalQuantizer(Quantizer):
     @abstractmethod
     def __init__(self):
-        super().__init__()
+        pass
 
     @abstractmethod
     def get_points_and_volumes(self, *args):
@@ -122,7 +126,7 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
 
 class RegularSizeSphericalQuantizer(SphericalQuantizer):
     def __init__(self):
-        super().__init__()
+        pass
 
     def get_points(self, *args):
         pass
@@ -144,7 +148,7 @@ class SamplerQuantizer(Quantizer):
 
 class SphereSamplerQuantizer(SamplerQuantizer):
     def __init__(self):
-        super().__init__()
+        pass
 
     def get_points(self, *args):
         pass
