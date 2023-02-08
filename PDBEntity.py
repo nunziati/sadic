@@ -89,7 +89,7 @@ class PDBEntity:
             raise ValueError("mode must be one of 'biopandas', 'biopython', 'pdb', 'gz', 'url', 'code', or 'infer'")
 
     def complete_build_from_entity(self) -> None:
-        self.atom_types: NDArray[np.string_] = self.entity.df["ATOM"]["element_symbol"].to_numpy(dtype=np.string_)
+        self.atom_types: NDArray[np.string_] = self.entity.df["ATOM"]["element_symbol"].to_numpy()
         self.atoms: NDArray[np.float32] = self.entity.df["ATOM"][["x_coord", "y_coord", "z_coord"]].to_numpy(dtype=np.float32)
         self.last_probe_radius: float | None = None
         self.radii: NDArray[np.float32] | None = None
@@ -117,8 +117,8 @@ class PDBEntity:
         self.build_from_code(code)
 
     def build_from_code(self, code: str) -> None:
-        if not re.match(PDBEntity._pdb_url_regex, code):
-            raise ValueError(f"code must be a code representing a pdb structure (format {PDBEntity._pdb_url_regex})")
+        if not re.match(PDBEntity._pdb_code_regex, code):
+            raise ValueError(f"code must be a code representing a pdb structure (format {PDBEntity._pdb_code_regex})")
         
         self.entity: PandasPdb = pd().fetch_pdb(code)
         self.complete_build_from_entity()
@@ -128,7 +128,7 @@ class PDBEntity:
 
     def get_radii(self, probe_radius: float | None = None) -> NDArray[np.float32]:
         final_probe_radius: float = probe_radius if probe_radius is not None else min(PDBEntity.vdw_radii.values())
-
+            
         if self.radii is None or self.last_probe_radius != final_probe_radius:
             self.last_probe_radius = final_probe_radius
             self.radii = np.array([PDBEntity.vdw_radii[atom_type] + final_probe_radius for atom_type in self.atom_types], dtype=np.float32)

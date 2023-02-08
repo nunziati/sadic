@@ -7,13 +7,15 @@ import numpy as np
 from time import time
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from sadic import reduce_multisphere
+
 
 protein = PDBEntity("1GWD")
 max_distance = 103.
 probe_radius = 11.06 # r0
 steps_number = 16 # nice value = 32
 protein_multisphere = Multisphere(protein)
-
+reduced_multisphere = reduce_multisphere(protein_multisphere, bisection_threshold = 0.2)
 """durations = []
 errors = []
 

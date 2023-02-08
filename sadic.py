@@ -8,27 +8,6 @@ import numpy as np
 default_quantizer_class = RegularStepsSphericalQuantizer
 default_quantizer_kwargs = {"rho_steps_number": 10, "theta_steps_number": 360, "phi_steps_number": 180}
 
-"""def reduce_multisphere(multisphere: Multisphere, quantizer: SphericalQuantizer):
-    max_radii = []
-
-
-    for candidate in candidate_centers:
-        a = max_radius 
-        b = max_radius * 2
-        
-        while b - a > 1:
-            sphere = Sphere(candidate, (a + b) / 2)
-            points = quantizer.get_surface_points(sphere)
-            if protein_multisphere.is_inside_fast(points).all():
-                a = (a + b) / 2
-            else:
-                b = (a + b) / 2
-
-        max_radii.append((a + b) / 2)
-        
-    print(max_radii)
-    print(max(max_radii))"""
-
 def find_candidate_max_radius_points(
         multisphere: Multisphere,
         quantizer_arg: SphericalQuantizer | None = None,
@@ -86,11 +65,13 @@ def find_max_radius_point(
     max_radii: NDArray[np.float32] = np.empty(candidate_max_radius_points.shape[0], dtype=np.float32)
 
     for idx, candidate in enumerate(candidate_max_radius_points):
+        candidate_point = multisphere.get_all_centers()[candidate]
+
         a = max_radius 
         b = max_radius * multiplier
         
         while b - a > bisection_threshold:
-            sphere = Sphere(candidate, (a + b) / 2)
+            sphere = Sphere(candidate_point, (a + b) / 2)
             points = quantizer.get_surface_points(sphere)
             if multisphere.is_inside(points)[0].all():
                 a = (a + b) / 2
@@ -107,17 +88,45 @@ def reduce_multisphere_step(
         min_radius: float = 1.52,
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
-        bisection_threshold: float = 1,
-        include_radius: bool = True
+        bisection_threshold: float = 1
         ) -> Multisphere:
     
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 
-    max_radius_point, max_radius = find_max_radius_point(multisphere, quantizer, min_radius, multiplier, exclude_points, bisection_threshold)
+    max_radius_point_idx, max_radius = find_max_radius_point(multisphere, quantizer, min_radius, multiplier, exclude_points, bisection_threshold)
+    max_radius_point = multisphere.get_all_centers()[max_radius_point_idx]
 
+    sphere = Sphere(max_radius_point, max_radius)
+    points, radii = multisphere.get_all_centers_and_radii()
+
+    is_inside = sphere.is_inside(points, radii)
+    points_to_add = np.concatenate((points[np.logical_not(is_inside)], np.expand_dims(max_radius_point, axis=0)), axis=0)
+
+    radii_to_add = np.append(radii[np.logical_not(is_inside)], max_radius)
+ 
+    new_multisphere = Multisphere(points_to_add, radii_to_add)
     
-    return Multisphere(multisphere.get_all_centers(), multisphere.get_all_radii(), max_radius_point, max_radius)
+    exclude_points = np.arange(points_to_add.shape[0] - exclude_points.shape[0] - 2, points_to_add.shape[0], dtype=np.int32)
     
+    return new_multisphere, max_radius
+    
+
+def reduce_multisphere(
+        multisphere: Multisphere,
+        quantizer_arg: SphericalQuantizer | None = None,
+        min_radius: float = 1.52,
+        multiplier: float = 2,
+        exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
+        bisection_threshold: float = 1
+        ) -> Multisphere:
+
+    quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
+    new_multisphere, max_radius = reduce_multisphere_step(multisphere, quantizer, min_radius, multiplier, exclude_points, bisection_threshold)
+
+    while max_radius > min_radius:
+        new_multisphere, max_radius = reduce_multisphere_step(new_multisphere, quantizer, min_radius, multiplier, exclude_points, bisection_threshold)
+
+    return new_multisphere
 
 """def find_reference_radius(multisphere, phi_values, theta_values):
     pass
