@@ -56,7 +56,7 @@ def find_max_radius_point(
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
         bisection_threshold: float = 1
-        ) -> tuple[NDArray[np.int32], np.int32]:
+        ) -> tuple[NDArray[np.int32], float]:
     
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 
@@ -80,7 +80,7 @@ def find_max_radius_point(
 
         max_radii[idx] = ((a + b) / 2)
 
-    return candidate_max_radius_points[np.argmax(max_radii)], np.max(max_radii)
+    return candidate_max_radius_points[np.argmax(max_radii)], float(np.max(max_radii))
 
 def reduce_multisphere_step(
         multisphere: Multisphere,
@@ -89,7 +89,7 @@ def reduce_multisphere_step(
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
         bisection_threshold: float = 1
-        ) -> Multisphere:
+        ) -> tuple[Multisphere, float]:
     
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 
