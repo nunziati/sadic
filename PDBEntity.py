@@ -11,7 +11,6 @@ class PDBEntity:
     _pdb_url_regex = r"(http[s]?://)?www.rcsb.org/structure/" + _pdb_code_regex + r"[/]?"
 
     vdw_radii_2004 = {
-        'H': 1.2,
         'C': 1.7,
         'N': 1.5,
         'O': 1.4,
@@ -19,7 +18,6 @@ class PDBEntity:
     }
 
     vdw_radii_2023 = {
-        "H": 1.2,
         "C": 1.7,
         "N": 1.55,
         "O": 1.52,
@@ -127,7 +125,7 @@ class PDBEntity:
         return self.atoms
 
     def get_radii(self, probe_radius: float | None = None) -> NDArray[np.float32]:
-        final_probe_radius: float = probe_radius if probe_radius is not None else min(PDBEntity.vdw_radii.values())
+        final_probe_radius: float = probe_radius if probe_radius is not None else 2. #min(PDBEntity.vdw_radii.values())
             
         if self.radii is None or self.last_probe_radius != final_probe_radius:
             self.last_probe_radius = final_probe_radius

@@ -110,17 +110,17 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         rho = solid.radius
         center = solid.center
         
-        theta_values = np.linspace(0, 2 * np.pi - 2 * np.pi/self.theta_steps_number, self.theta_steps_number, dtype=np.float32)
-        phi_values = np.linspace(0, np.pi - 2 * np.pi/self.theta_steps_number, self.phi_steps_number, dtype=np.float32)
+        theta_values = np.linspace(0, 2 * np.pi - 2 * np.pi / self.theta_steps_number, self.theta_steps_number, dtype=np.float32)
+        phi_values = np.linspace(0, np.pi - np.pi / self.phi_steps_number, self.phi_steps_number, dtype=np.float32)
 
-        grid = np.stack(np.meshgrid(theta_values, phi_values), axis=-1).reshape((-1, 3))
+        grid = np.stack(np.meshgrid(theta_values, phi_values), axis=-1).reshape((-1, 2))
 
-        return self.spherical_to_cartesian(rho, grid[1], grid[2], center)
+        return self.spherical_to_cartesian(rho, grid[:, 0], grid[:, 1], center)
 
     def spherical_to_cartesian(self, rho, theta, phi, center) -> NDArray[np.float32]:
-        x = rho * np.sin(theta) * np.cos(phi)
+        x = rho * np.sin(phi) * np.cos(theta)
         y = rho * np.sin(theta) * np.sin(phi)
-        z = rho * np.cos(theta)
+        z = rho * np.cos(phi)
 
         return np.stack([x, y, z], axis=-1) + center
 

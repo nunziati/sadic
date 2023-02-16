@@ -61,9 +61,6 @@ class Multisphere(Solid):
         if centers.shape[1] != 3:
             raise ValueError("centers must be numpy.ndarray objects with shape (n, 3)")
 
-        if radii.shape[1]!= 3:
-            raise ValueError("radii must be numpy.ndarray objects with shape (n,)")
-
         if centers.shape[0] != radii.shape[0]:
             raise ValueError("first argument and second argument must have the same number of rows")
 
@@ -196,3 +193,6 @@ class Multisphere(Solid):
             return self.get_internal_centers_and_radii()
         else:
             raise ValueError("subset must be one of 'all', 'voronoi', 'surface', 'internal', 'best'")"""
+        
+    def __len__(self) -> int:
+        return self.centers.shape[0]
