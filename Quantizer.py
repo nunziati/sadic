@@ -60,7 +60,7 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
         grid = np.stack(np.meshgrid(x_values, y_values, z_values), axis=-1).reshape((-1, 3))
 
         grid_inside = grid[solid.is_inside(grid)]
-        return grid_inside, np.full(grid_inside.shape, volume, dtype=np.float32)
+        return grid_inside, np.full((grid_inside.shape[0],), volume, dtype=np.float32)
 
 
 class RegularSizeCartesianQuantizer(CartesianQuantizer):

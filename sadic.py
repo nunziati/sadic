@@ -95,7 +95,7 @@ def reduce_multisphere_step(
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
         bisection_threshold: float = 1
-        ) -> tuple[Multisphere, float]:
+        ) -> tuple[Multisphere, float, NDArray[np.int32]]:
     
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 
