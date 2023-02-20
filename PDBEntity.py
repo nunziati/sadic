@@ -24,7 +24,7 @@ class PDBEntity:
         "S": 1.8,
     }
 
-    vdw_radii = vdw_radii_2023
+    vdw_radii = vdw_radii_2004
 
     def __init__(self, arg: str | PandasPdb | Structure, mode: str = "infer") -> None:
         if mode == "biopandas":
