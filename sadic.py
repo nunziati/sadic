@@ -1,10 +1,10 @@
 from Multisphere import Multisphere
 from Sphere import Sphere
 from Quantizer import SphericalQuantizer, RegularStepsSphericalQuantizer
-from mpl_toolkits import mplot3d
 from numpy.typing import NDArray
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 default_quantizer_class = RegularStepsSphericalQuantizer
 default_quantizer_kwargs = {"rho_steps_number": 10, "theta_steps_number": 36, "phi_steps_number": 18}
@@ -24,7 +24,7 @@ def find_candidate_max_radius_points(
 
     max_radius_points: list[int] = [0]
 
-    for idx in range(centers.shape[0]):
+    for idx in tqdm(range(centers.shape[0])):
         if idx in exclude_points:
             continue
 
@@ -65,7 +65,7 @@ def find_max_radius_point(
     
     max_radii: NDArray[np.float32] = np.empty(candidate_max_radius_points.shape[0], dtype=np.float32)
 
-    for idx, candidate in enumerate(candidate_max_radius_points):
+    for idx, candidate in tqdm(enumerate(candidate_max_radius_points)):
         candidate_point = multisphere.get_all_centers()[candidate]
 
         a = max_radius 

@@ -5,20 +5,24 @@ from Sphere import Sphere
 from Quantizer import RegularStepsCartesianQuantizer
 import numpy as np
 from time import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sadic import find_max_radius_point
 
 
+print("caricando proteina...", end="", flush=True)
 protein = PDBEntity("1A0I")
+print("fatto")
 max_distance = 103.
 probe_radius = 11.06 # r0
 steps_number = 16 # nice value = 32
+print("creando proteina...", end="", flush=True)
 protein_multisphere = Multisphere(protein)
+print("fatto")
 
-print("calcolando il raggio massimo", end="")
+print("calcolando il raggio massimo...", end="", flush=True)
 _, probe_radius = find_max_radius_point(protein_multisphere, bisection_threshold = 0.2)
-print(": finito")
+print("fatto")
 print("probe radius", probe_radius, sep="=")
 """durations = []
 errors = []
@@ -48,7 +52,7 @@ ax2.plot(range(16, 100), errors)
 
 plt.show()"""
 
-def sadic_cubes(steps_number, protein_multisphere):
+def sadic_cubes(steps_number, protein_multisphere, probe_radius):
     quantizer = RegularStepsCartesianQuantizer(steps_number)
 
     sphere = Sphere(np.array([0., 0., 0.]), probe_radius)
@@ -128,6 +132,9 @@ def sadic(steps_number, protein_multisphere, probe_radius):
     print("fine sadic")"""
 
     return depth_idx, count
+
+
+
 
 def sadic_one_shot(steps_number, protein_multisphere):
     quantizer = RegularStepsCartesianQuantizer(steps_number)
@@ -229,12 +236,12 @@ print(f"Total time: {time() - start_time} seconds")"""
 d_index = sadic.sadic(protein)"""
 
 
-true_depth_index = sadic(16, protein_multisphere, probe_radius)[0]
+true_depth_index = sadic_cubes(16, protein_multisphere, probe_radius)[0]
 
 np.save("true_depth_index.npy", true_depth_index)
 depth_index = np.empty((11, len(protein_multisphere)), dtype=float)
 for index, probe_radius in enumerate(range(1, 12)):
     print("probe_radius =", probe_radius)
-    depth_index[index] = sadic(16, protein_multisphere, probe_radius)[0]
+    depth_index[index] = sadic_cubes(16, protein_multisphere, probe_radius)[0]
 
 np.save("test_depth_index.npy", depth_index)
