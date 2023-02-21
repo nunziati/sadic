@@ -106,6 +106,8 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         theta_values = np.linspace(0, 2 * np.pi, self.theta_steps_number)
         phi_values = np.linspace(min_phi, max_phi, self.phi_steps_number - 1)
 
+        return punti, volumi
+
     def get_surface_points(self, solid: Sphere) -> NDArray[np.float32]:
         rho = solid.radius
         center = solid.center
