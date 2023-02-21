@@ -101,7 +101,7 @@ class Multisphere(Solid):
 
         return self.extreme_coordinates
 
-    def is_inside(self, arg: NDArray[np.float32] | Sphere, get_volumes: bool = False) -> NDArray[np.bool_] | tuple[NDArray[np.bool_], NDArray[np.float32]]:
+    def is_inside(self, arg: NDArray[np.float32] | Sphere, get_volumes: bool = False) -> NDArray[np.bool_]:
         if isinstance(arg, Sphere):
             return self.sphere_is_inside(arg, get_volumes=get_volumes)
 
@@ -119,13 +119,13 @@ class Multisphere(Solid):
 
         return (((points.reshape((1, -1, 3)) - self.centers.reshape((-1, 1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((-1, 1)) ** 2).any(axis=0)
 
-    def sphere_is_inside(self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False) -> NDArray[np.bool_] | tuple[NDArray[np.bool_], NDArray[np.float32]]:
+    def sphere_is_inside(self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False) -> NDArray[np.bool_]:
         quantizer: Quantizer = Multisphere.default_quantizer_class(**Multisphere.default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 
-        points, volumes = quantizer.get_points_and_volumes(sphere)
+        points, _ = quantizer.get_points_and_volumes(sphere)
 
         if get_volumes:
-            return self.point_is_inside(points), volumes
+            return self.point_is_inside(points)
 
         return self.point_is_inside(points)
 

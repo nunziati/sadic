@@ -1,6 +1,7 @@
 from Multisphere import Multisphere
 from Sphere import Sphere
 from Quantizer import SphericalQuantizer, RegularStepsSphericalQuantizer
+from PDBEntity import PDBEntity
 from numpy.typing import NDArray
 import numpy as np
 import matplotlib.pyplot as plt
@@ -53,11 +54,13 @@ def find_candidate_max_radius_points(
 def find_max_radius_point(
         multisphere: Multisphere,
         quantizer_arg: SphericalQuantizer | None = None,
-        min_radius: float = 1.52,
+        min_radius: float = min(PDBEntity.vdw_radii.values()),
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
         bisection_threshold: float = 1
         ) -> tuple[NDArray[np.int32], float]:
+    
+    min_radius *= multiplier
     
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 

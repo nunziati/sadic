@@ -9,13 +9,13 @@ from time import time
 from tqdm import tqdm
 from sadic import find_max_radius_point
 
-
 print("caricando proteina...", end="", flush=True)
 protein = PDBEntity("1A0I")
+# protein = PDBEntity("1GWD")
 print("fatto")
 max_distance = 103.
 probe_radius = 11.06 # r0
-steps_number = 16 # nice value = 32
+steps_number = 64 # nice value = 32
 print("creando proteina...", end="", flush=True)
 protein_multisphere = Multisphere(protein)
 print("fatto")
@@ -60,7 +60,7 @@ def sadic_cubes(steps_number, protein_multisphere, probe_radius):
     centers, radii = protein_multisphere.get_all_centers_and_radii()
     squared_radii = (radii ** 2).reshape((-1, 1)).astype(np.float32)
     augmented_centers = (centers.reshape(1, -1, 3) - centers.reshape(-1, 1, 3)).astype(np.float32)
-    reference_volume = volume * points.shape[0]
+    # reference_volume = volume * points.shape[0]
 
     depth_idx = np.empty(centers.shape[0], dtype=np.float32)
 
@@ -76,13 +76,13 @@ def sadic_cubes(steps_number, protein_multisphere, probe_radius):
         selected_centers = my_centers[to_select]
         selected_radii = squared_radii[to_select]
 
-        depth_idx[idx] = 2 / reference_volume * (((points.reshape((1, -1, 3)) - selected_centers.reshape((-1, 1, 3))) ** 2).sum(axis=-1) <= selected_radii).any(axis=0).sum() * volume
+        depth_idx[idx] = 2 * (((points.reshape((1, -1, 3)) - selected_centers.reshape((-1, 1, 3))) ** 2).sum(axis=-1) <= selected_radii).any(axis=0).sum() / points.shape[0]
 
     """print(max(depth_idx))
     plt.hist(depth_idx, bins=30)
     plt.show()"""
 
-    return depth_idx
+    return depth_idx, -1
 
 def sadic_norm(steps_number, protein_multisphere):
     quantizer = RegularStepsCartesianQuantizer(steps_number)
@@ -235,13 +235,21 @@ print(f"Total time: {time() - start_time} seconds")"""
 
 d_index = sadic.sadic(protein)"""
 
+probe_radius = 10.
 
-true_depth_index = sadic_cubes(16, protein_multisphere, probe_radius)[0]
+print("SADIC CUBES")
+true_depth_index = sadic_cubes(steps_number, protein_multisphere, probe_radius)[0]
+print("")
 
-np.save("true_depth_index.npy", true_depth_index)
-depth_index = np.empty((11, len(protein_multisphere)), dtype=float)
+"""print("SADIC")
+true_depth_index = sadic(16, protein_multisphere, probe_radius)[0]
+print("")"""
+
+np.save("10A_depth_index_64.npy", true_depth_index)
+
+"""depth_index = np.empty((11, len(protein_multisphere)), dtype=float)
 for index, probe_radius in enumerate(range(1, 12)):
     print("probe_radius =", probe_radius)
     depth_index[index] = sadic_cubes(16, protein_multisphere, probe_radius)[0]
 
-np.save("test_depth_index.npy", depth_index)
+np.save("test_depth_index.npy", depth_index)"""
