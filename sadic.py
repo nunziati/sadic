@@ -13,12 +13,15 @@ default_quantizer_kwargs = {"rho_steps_number": 10, "theta_steps_number": 36, "p
 def find_candidate_max_radius_points(
         multisphere: Multisphere,
         quantizer_arg: SphericalQuantizer | None = None,
-        min_radius: float = 1.52,
+        min_radius: float | None = None,
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32)
         ) -> tuple[NDArray[np.float32], float]:
 
+    min_radius = multisphere.get_all_radii().min() if min_radius is None else min_radius
+    
     centers: NDArray[np.float32] = multisphere.get_all_centers()
+    
     max_radius: float = min_radius
     
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
@@ -54,14 +57,14 @@ def find_candidate_max_radius_points(
 def find_max_radius_point(
         multisphere: Multisphere,
         quantizer_arg: SphericalQuantizer | None = None,
-        min_radius: float = min(PDBEntity.vdw_radii.values()),
+        min_radius: float | None = None,
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
         bisection_threshold: float = 1
         ) -> tuple[NDArray[np.int32], float]:
     
-    min_radius *= multiplier
-    
+    min_radius = multisphere.get_all_radii().min() if min_radius is None else min_radius
+
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 
     candidate_max_radius_points, max_radius = find_candidate_max_radius_points(multisphere, quantizer, min_radius, multiplier=multiplier, exclude_points=exclude_points)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 true_depth_indexes_ref = np.load("true_depth_index_64.npy")
 
-true_depth_indexes_test = np.load("true_depth_index_64.npy")
+true_depth_indexes_test = np.load("10A_depth_index_64.npy")
 
 """diff = np.abs(true_depth_indexes_ref - true_depth_indexes_test)
 
