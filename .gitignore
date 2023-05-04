@@ -131,3 +131,5 @@ dmypy.json
 Varrazzo.zip
 1a0i_di.txt
 *.npy
+
+test/

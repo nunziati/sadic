@@ -1,7 +1,7 @@
-from Solid import Solid
-from Sphere import Sphere
-from PDBEntity import PDBEntity
-from Quantizer import Quantizer, RegularStepsCartesianQuantizer
+from sadic.solid import Solid, Sphere
+from sadic.pdb import PDBEntity
+from sadic.quantizer import Quantizer, RegularStepsCartesianQuantizer
+
 from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
 

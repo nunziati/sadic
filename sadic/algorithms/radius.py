@@ -1,11 +1,8 @@
-from Multisphere import Multisphere
-from Sphere import Sphere
-from Quantizer import SphericalQuantizer, RegularStepsSphericalQuantizer
-from PDBEntity import PDBEntity
+from sadic.solid import Sphere, Multisphere
+from sadic.quantizer import SphericalQuantizer, RegularStepsSphericalQuantizer
+
 from numpy.typing import NDArray
 import numpy as np
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 default_quantizer_class = RegularStepsSphericalQuantizer
 default_quantizer_kwargs = {"rho_steps_number": 10, "theta_steps_number": 36, "phi_steps_number": 18}
@@ -28,7 +25,7 @@ def find_candidate_max_radius_points(
 
     max_radius_points: list[int] = [0]
 
-    for idx in tqdm(range(centers.shape[0])):
+    for idx in range(centers.shape[0]):
         if idx in exclude_points:
             continue
 
@@ -71,7 +68,7 @@ def find_max_radius_point(
     
     max_radii: NDArray[np.float32] = np.empty(candidate_max_radius_points.shape[0], dtype=np.float32)
 
-    for idx, candidate in tqdm(enumerate(candidate_max_radius_points)):
+    for idx, candidate in enumerate(candidate_max_radius_points):
         candidate_point = multisphere.get_all_centers()[candidate]
 
         a = max_radius 
@@ -80,10 +77,6 @@ def find_max_radius_point(
         while b - a > bisection_threshold:
             sphere = Sphere(candidate_point, (a + b) / 2)
             points = quantizer.get_surface_points(sphere)
-            """fig = plt.figure()
-            ax = plt.axes(projection='3d')
-            ax.scatter3D(points[:, 0], points[:, 1], points[:, 2], c=points[:, 2], cmap='Greens')
-            plt.show()"""
 
             if multisphere.is_inside(points).all():
                 a = (a + b) / 2
@@ -147,17 +140,3 @@ def reduce_multisphere(
         new_multisphere, max_radius, exclude_points = reduce_multisphere_step(new_multisphere, quantizer, min_radius, multiplier, exclude_points, bisection_threshold)
 
     return new_multisphere
-
-"""def find_reference_radius(multisphere, phi_values, theta_values):
-    pass
-
-def find_depth_index(multisphere, point, reference_radius):
-    pass
-
-def sadic(protein):
-    multisphere = Multisphere(protein)
-    reference_radius = find_reference_radius(multisphere)
-    
-    depth_index_list = []
-    for point in multisphere:
-        depth_index_list.append(find_depth_index(multisphere, point, reference_radius))"""

@@ -3,8 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import NDArray
 
-from Sphere import Sphere
-from Solid import Solid
+from sadic.solid import Solid, Sphere
 
 class Quantizer(ABC):
     @abstractmethod
@@ -106,7 +105,7 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         theta_values = np.linspace(0, 2 * np.pi, self.theta_steps_number)
         phi_values = np.linspace(min_phi, max_phi, self.phi_steps_number - 1)
 
-        return punti, volumi
+        return None # punti, volumi
 
     def get_surface_points(self, solid: Sphere) -> NDArray[np.float32]:
         rho = solid.radius
@@ -125,8 +124,6 @@ class RegularStepsSphericalQuantizer(SphericalQuantizer):
         z = rho * np.cos(phi)
 
         return np.stack([x, y, z], axis=-1) + center
-
-
 
 class RegularSizeSphericalQuantizer(SphericalQuantizer):
     def __init__(self) -> None:

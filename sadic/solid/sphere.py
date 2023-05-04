@@ -1,4 +1,4 @@
-from Solid import Solid
+from sadic.solid import Solid
 import numpy as np
 
 from numpy.typing import NDArray
