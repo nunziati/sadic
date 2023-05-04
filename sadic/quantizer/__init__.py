@@ -1,4 +1,4 @@
-from Quantizer import (
+from .quantizer import (
     Quantizer,
     CartesianQuantizer,
     RegularStepsCartesianQuantizer,

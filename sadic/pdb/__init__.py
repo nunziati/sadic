@@ -1,3 +1,3 @@
-from PDBEntity import PDBEntity
+from .pdbentity import PDBEntity
 
 __all__ = ["PDBEntity"]
