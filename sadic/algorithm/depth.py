@@ -1,4 +1,4 @@
-from sadic.solid import Sphere
+from sadic.solid import Sphere, VoxelSolid
 from sadic.quantizer import RegularStepsSphericalQuantizer, RegularStepsCartesianQuantizer
 import numpy as np
 
@@ -189,3 +189,30 @@ def sadic_one_shot(protein_multisphere, probe_radius, steps_number):
     plt.show()"""
 
     return a
+
+
+def sadic_original_voxel(protein_solid: VoxelSolid, probe_radius, steps_number):
+    quantizer = RegularStepsCartesianQuantizer(steps_number)
+    sphere = Sphere(np.array([0., 0., 0.]), probe_radius)
+    points, _ = quantizer.get_points_and_volumes(sphere)
+    centers = protein_solid.multisphere.get_all_centers()
+
+    quantum_number = points.shape[0]
+    center_number = centers.shape[0]
+    
+    points = np.empty((center_number, quantum_number, 3), dtype=np.float32)
+
+    for idx, center in enumerate(centers):
+        sphere = Sphere(center, probe_radius)
+        points[idx], _ = quantizer.get_points_and_volumes(sphere)
+
+    shape = points.shape
+    points = points.reshape((-1, 3))
+
+    depth_idx = 2 * (1 - protein_solid.is_inside(points).reshape(shape[:-1]).sum(axis=1) / quantum_number)
+
+    count = depth_idx[depth_idx == 0.].shape[0]
+
+    print(count)
+    print("min depth index = ", np.min(depth_idx))
+    return depth_idx, count

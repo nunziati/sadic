@@ -121,6 +121,9 @@ class PDBEntity:
         self.entity: PandasPdb = pd().fetch_pdb(code)
         self.complete_build_from_entity()
 
+    def __len__(self) -> int:
+        return len(self.atoms)
+    
     def get_centers(self) -> NDArray[np.float32]:
         return self.atoms
 

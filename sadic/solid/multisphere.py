@@ -10,6 +10,8 @@ from tqdm import tqdm
 from collections.abc import Sequence
 
 import numpy as np
+from scipy.spatial.distance import cdist
+from sklearn.metrics import pairwise_distances
 
 from numpy.typing import NDArray
 
@@ -49,6 +51,7 @@ class Multisphere(Solid):
                 raise TypeError("2 arguments must be numpy.ndarray objects")        
 
     def build_empty(self, length: int) -> None:
+        # NOTA: NON C'è BISOGNO DI COSTRUIRLA VUOTA TUTTE LE VOLTE, PERò BISOGNA COMUNQUE SETTARE A None I DUE ATTRIBUTI QUI SOTTO
         if length <= 0:
             raise ValueError("length must be a positive integer")
 
@@ -64,8 +67,10 @@ class Multisphere(Solid):
         if centers.shape[0] != radii.shape[0]:
             raise ValueError("first argument and second argument must have the same number of rows")
 
-        self.centers: NDArray[np.float32] = centers
-        self.radii: NDArray[np.float32] = radii
+        self.build_empty(centers.shape[0])
+
+        self.centers = centers
+        self.radii = radii
 
     def build_from_spheres(self, spheres: Sequence[Sphere]) -> None:
         if len(spheres) == 0:
@@ -78,8 +83,9 @@ class Multisphere(Solid):
             self.radii[idx] = sphere.radius
 
     def build_from_sadic_protein(self, protein: PDBEntity) -> None:
-        self.centers: NDArray[np.float32] = protein.get_centers()
-        self.radii: NDArray[np.float32] = protein.get_radii()
+        self.build_empty(len(protein))
+        self.centers = protein.get_centers()
+        self.radii = protein.get_radii()
 
     def build_from_biopython_protein(self, protein: Structure) -> None:
         sadic_protein: PDBEntity = PDBEntity(protein)
@@ -117,7 +123,9 @@ class Multisphere(Solid):
         if points.shape[1] != 3:
             raise ValueError("points must be a numpy.ndarray with shape (n, 3)")
 
-        return (((points.reshape((1, -1, 3)) - self.centers.reshape((-1, 1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((-1, 1)) ** 2).any(axis=0)
+        # return (((points.reshape((1, -1, 3)) - self.centers.reshape((-1, 1, 3))) ** 2).sum(axis=-1) <= self.radii.reshape((-1, 1)) ** 2).any(axis=0)
+        return (cdist(points.reshape((-1, 3)), self.centers.reshape((-1, 3)), metric='sqeuclidean') <= self.radii ** 2).any(axis=1)
+        # return (pairwise_distances(points.reshape((-1, 3)), self.centers.reshape((-1, 3)), metric='sqeuclidean', n_jobs=1) <= self.radii ** 2).any(axis=1)
 
     def sphere_is_inside(self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False) -> NDArray[np.bool_]:
         quantizer: Quantizer = Multisphere.default_quantizer_class(**Multisphere.default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg

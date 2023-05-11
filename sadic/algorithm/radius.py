@@ -1,4 +1,4 @@
-from sadic.solid import Sphere, Multisphere
+from sadic.solid import Sphere, Multisphere, VoxelSolid
 from sadic.quantizer import SphericalQuantizer, RegularStepsSphericalQuantizer
 
 from numpy.typing import NDArray
@@ -46,8 +46,6 @@ def find_candidate_max_radius_points(
 
         if last_fitting_radius == max_radius:
             max_radius_points.append(idx)
-
-    # candidate_centers = centers[deepest_atoms]
 
     return np.array(max_radius_points), max_radius
 
@@ -140,3 +138,24 @@ def reduce_multisphere(
         new_multisphere, max_radius, exclude_points = reduce_multisphere_step(new_multisphere, quantizer, min_radius, multiplier, exclude_points, bisection_threshold)
 
     return new_multisphere
+
+def find_max_radius_point_voxel(
+        voxel: VoxelSolid,
+        quantizer_arg: SphericalQuantizer | None = None,
+        min_radius: float | None = None
+        ) -> tuple[int, float]:
+    
+    min_radius = voxel.multisphere.get_all_radii().min() if min_radius is None else min_radius
+
+    quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
+
+    centers_indexes = voxel.cartesian_to_grid(voxel.multisphere.get_all_centers())
+    radii = voxel.multisphere.get_all_radii()
+
+    edt = voxel.edt()
+    print("max edt ", np.max(edt))
+    edt_centers = edt[centers_indexes[:, 0], centers_indexes[:, 1], centers_indexes[:, 2]]
+    max_edt_center = np.argmax(edt_centers)
+    max_edt = edt_centers[max_edt_center]
+
+    return int(max_edt_center), float(max_edt)
