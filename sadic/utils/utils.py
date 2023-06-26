@@ -1,5 +1,6 @@
-from sadic.utils.typing import PointType, is_PointType
 import numpy as np
+
+from sadic.utils.typing import PointType, is_PointType
 
 def point_square_distance(x, y) -> float:
     if not is_PointType(x) or not is_PointType(y):
