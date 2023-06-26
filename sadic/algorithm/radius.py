@@ -11,7 +11,7 @@ def find_candidate_max_radius_points(
         multisphere: Multisphere,
         quantizer_arg: SphericalQuantizer | None = None,
         min_radius: float | None = None,
-        multiplier: float = 2,
+        multiplier: float = 10000,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32)
         ) -> tuple[NDArray[np.float32], float]:
 
@@ -55,7 +55,7 @@ def find_max_radius_point(
         min_radius: float | None = None,
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
-        bisection_threshold: float = 1
+        bisection_threshold: float = 0.3
         ) -> tuple[NDArray[np.int32], float]:
     
     min_radius = multisphere.get_all_radii().min() if min_radius is None else min_radius
@@ -91,7 +91,7 @@ def reduce_multisphere_step(
         min_radius: float = 1.52,
         multiplier: float = 2,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
-        bisection_threshold: float = 1
+        bisection_threshold: float = 0.3
         ) -> tuple[Multisphere, float, NDArray[np.int32]]:
     
     quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
@@ -119,7 +119,7 @@ def reduce_multisphere(
         quantizer_arg: SphericalQuantizer | None = None,
         min_radius: float = 1.52,
         multiplier: float = 2,
-        bisection_threshold: float = 1
+        bisection_threshold: float = 0.3
         ) -> Multisphere:
 
     exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32)
@@ -139,23 +139,29 @@ def reduce_multisphere(
 
     return new_multisphere
 
-def find_max_radius_point_voxel(
-        voxel: VoxelSolid,
-        quantizer_arg: SphericalQuantizer | None = None,
-        min_radius: float | None = None
-        ) -> tuple[int, float]:
+def find_max_radius_point_voxel(voxel: VoxelSolid) -> tuple[int, float]:
     
-    min_radius = voxel.multisphere.get_all_radii().min() if min_radius is None else min_radius
-
-    quantizer: SphericalQuantizer = default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
-
     centers_indexes = voxel.cartesian_to_grid(voxel.multisphere.get_all_centers())
-    radii = voxel.multisphere.get_all_radii()
 
     edt = voxel.edt()
-    print("max edt ", np.max(edt))
+    print("max edt", np.max(edt))
     edt_centers = edt[centers_indexes[:, 0], centers_indexes[:, 1], centers_indexes[:, 2]]
     max_edt_center = np.argmax(edt_centers)
     max_edt = edt_centers[max_edt_center]
 
+    """min_edt = np.min(edt[edt > 0])
+    surface_points = voxel.grid_to_cartesian(np.vstack(np.where(edt == min_edt)).transpose())
+    surface_idx = np.arange(surface_points.shape[0])
+    np.random.shuffle(surface_idx)
+    surface_points = surface_points[surface_idx[:2000]]
+    import matplotlib.pyplot as plt
+    ax = plt.figure().add_subplot(projection='3d')
+    ax.scatter(surface_points[:, 0], surface_points[:, 1], surface_points[:, 2])
+
+    u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+    x = np.cos(u)*np.sin(v)*max_edt + voxel.multisphere.get_all_centers()[max_edt_center, 0]
+    y = np.sin(u)*np.sin(v)*max_edt + voxel.multisphere.get_all_centers()[max_edt_center, 1]
+    z = np.cos(v)*max_edt + voxel.multisphere.get_all_centers()[max_edt_center, 2]
+    ax.plot_surface(x, y, z, color="r")
+    plt.show()"""
     return int(max_edt_center), float(max_edt)

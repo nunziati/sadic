@@ -11,6 +11,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from typing import Callable
 from numpy.typing import NDArray
 
 from scipy.ndimage.measurements import label
@@ -22,22 +23,61 @@ class VoxelSolid(Solid):
     default_quantizer_class = RegularStepsCartesianQuantizer
     default_quantizer_kwargs = {"steps_number": 32}
 
-    def __init__(self, arg1: Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32], arg2: None | NDArray[np.float32] = None, resolution: float = 0.3) -> None:
-       multisphere = Multisphere(arg1, arg2)
-       self.build_from_multisphere(multisphere, resolution)
+    def __init__(
+            self, arg1: Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32],
+            arg2: None | NDArray[np.float32] = None,
+            resolution: float = 0.3,
+            extreme_coordinates: None | NDArray[np.float32] = None,
+            align_with: "None | VoxelSolid" = None
+            ) -> None:
+       
+        if isinstance(arg1, Multisphere):
+            self.build_from_multisphere(arg1, resolution, extreme_coordinates=extreme_coordinates)
+        else:
+            multisphere = Multisphere(arg1, arg2)
+            self.build_from_multisphere(multisphere, resolution, extreme_coordinates=extreme_coordinates, align_with=align_with)
 
-    def build_from_multisphere(self, multisphere: Multisphere, resolution: float = 0.3) -> None:
+    def build_from_multisphere(
+            self,
+            multisphere: Multisphere,
+            resolution: float = 0.3,
+            extreme_coordinates: None | NDArray[np.float32] = None,
+            align_with: "None | VoxelSolid" = None
+            ) -> None:
+        
         self.multisphere = multisphere
         self.resolution = resolution
-        self.extreme_coordinates = multisphere.get_extreme_coordinates()
-        self.dimensions = np.ceil((self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0]) / resolution).astype(np.int32)
+
+        if extreme_coordinates is None:
+            self.extreme_coordinates = multisphere.get_extreme_coordinates()
+            self.extreme_coordinates[:, 1] += np.modf((self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0]) / self.resolution)[0] * self.resolution
+            if align_with is not None:
+                if self.resolution != align_with.resolution:
+                    raise ValueError("resolution must be the same as align_with.resolution")
+                grid_offset = (align_with.extreme_coordinates[:, 0] - self.extreme_coordinates[:, 0]) / self.resolution
+                self.extreme_coordinates = self.extreme_coordinates + ((grid_offset - np.round(grid_offset)) * self.resolution).reshape(-1, 1)
+        else:
+            self.extreme_coordinates = extreme_coordinates
+
+        self.dimensions = np.ceil((self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0]) / self.resolution).astype(np.int32)
         self.grid = np.empty(self.dimensions, dtype=np.bool_)
 
-        yz_coordinates = np.array(np.meshgrid(np.arange(self.dimensions[1]), np.arange(self.dimensions[2]))).T.reshape(-1, 2)
+        """yz_coordinates = np.array(np.meshgrid(np.arange(self.dimensions[1]), np.arange(self.dimensions[2]))).T.reshape(-1, 2)
 
-        for x in tqdm(range(self.dimensions[0])):
+        for x in range(self.dimensions[0]):
             points = np.concatenate([np.full((self.dimensions[1] * self.dimensions[2], 1), x), yz_coordinates], axis=-1).astype(np.int32)
-            self.grid[points[:, 0], points[:, 1], points[:, 2]] = multisphere.is_inside(self.grid_to_cartesian(points), get_volumes=False)
+            self.grid[points[:, 0], points[:, 1], points[:, 2]] = multisphere.is_inside(self.grid_to_cartesian(points), get_volumes=False)"""
+            
+        if len(self.multisphere) == 1:
+            self.grid = multisphere.is_inside(self.grid_to_cartesian(self.get_all_grid_coordinates())).reshape(self.dimensions)
+        else:
+            for center, radius in tqdm(zip(*self.multisphere.get_all_centers_and_radii())):
+                sphere = VoxelSolid([Sphere(center, radius)], resolution=self.resolution, align_with=self)
+                self.union_(sphere)
+
+    def get_all_grid_coordinates(self) -> NDArray[np.int32]:
+        return np.mgrid[0:self.dimensions[0], 0:self.dimensions[1], 0:self.dimensions[2]
+                        ].astype(np.int32).transpose(1, 2, 3, 0).reshape(-1, self.dimensions.shape[0])
 
     def cartesian_to_grid(self, coordinates: NDArray[np.float32]) -> NDArray[np.int32]:
         if coordinates.shape[coordinates.ndim - 1] != 3:
@@ -64,6 +104,25 @@ class VoxelSolid(Solid):
 
     def edt(self) -> NDArray[np.float32]:
         return distance_transform_edt(self.grid, sampling=self.resolution)
+
+    def translate(self, shift: NDArray[np.int32]) -> "VoxelSolid":
+        if shift.ndim != 1 or shift.shape[0] != 3:
+            raise ValueError("shift must be a 1D array of 3 elements")
+
+        vs = deepcopy(self)
+        
+        vs.grid = np.roll(vs.grid, shift, axis=(0, 1, 2))
+
+        for axis in range(3):
+            array_slice = [slice(None)] * vs.grid.ndim
+            if shift[axis] > 0:
+                array_slice[axis] = slice(0, shift[axis])
+                vs.grid[tuple(array_slice)] = False
+            else:
+                array_slice[axis] = slice(shift[axis], None)
+                vs.grid[tuple(array_slice)] = False
+
+        return vs
 
     def is_inside(self, arg: NDArray[np.float32] | Sphere, get_volumes: bool = False) -> NDArray[np.bool_]:
         if isinstance(arg, Sphere):
@@ -99,46 +158,64 @@ class VoxelSolid(Solid):
 
         return self.point_is_inside(points)
 
-    def get_surface_centers(self):
-        raise NotImplementedError
-
-    def get_surface_radii(self):
-        raise NotImplementedError
-
-    def get_surface_centers_and_radii(self):
-        return self.get_surface_centers(), self.get_surface_radii()
-
-    def get_internal_centers(self):
-        raise NotImplementedError
-
-    def get_internal_radii(self):
-        raise NotImplementedError
+    def local_function(self, function: Callable, other: "VoxelSolid") -> None:
+         # check if grids are aligned
+        if self.resolution != other.resolution:
+            raise ValueError("Grids must have the same resolution")
+        displacement = (self.extreme_coordinates - other.extreme_coordinates) / self.resolution
+        if np.any(np.round(displacement - np.round(displacement, decimals=2), decimals=2)):
+            raise ValueError("Grids must be aligned")
         
-    def get_internal_centers_and_radii(self):
-        return self.get_internal_centers(), self.get_internal_radii()
+        # find the intersection points of the grids
+        min_intersection_centers = np.max(np.stack((self.extreme_coordinates[:, 0], other.extreme_coordinates[:, 0]), axis=1), axis=1) + self.resolution / 2
+        max_intersection_centers = np.min(np.stack((self.extreme_coordinates[:, 1], other.extreme_coordinates[:, 1]), axis=1), axis=1) + self.resolution / 2
 
-    def get_candidate_centers_and_radii(self, input_point = None, subset = "best"):
-        """if input_point and not is_PointType(input_point):
-            raise TypeError("Argument must be a sequence of length 3 or None")
+        self_intersection_centers = np.stack((self.cartesian_to_grid(min_intersection_centers), self.cartesian_to_grid(max_intersection_centers)), axis=1)
+        other_intersection_centers = np.stack((other.cartesian_to_grid(min_intersection_centers), other.cartesian_to_grid(max_intersection_centers)), axis=1)
+
+        function(self, other, self_intersection_centers, other_intersection_centers)
+
+    def local_operator(self, operator: Callable, other: "VoxelSolid") -> None:
+        def function(self, other, self_intersection_centers, other_intersection_centers):
+            self.grid[
+                self_intersection_centers[0, 0]:self_intersection_centers[0, 1],
+                self_intersection_centers[1, 0]:self_intersection_centers[1, 1],
+                self_intersection_centers[2, 0]:self_intersection_centers[2, 1]
+                ] = operator(
+                self.grid[
+                    self_intersection_centers[0, 0]:self_intersection_centers[0, 1],
+                    self_intersection_centers[1, 0]:self_intersection_centers[1, 1],
+                    self_intersection_centers[2, 0]:self_intersection_centers[2, 1]
+                ],
+                other.grid[
+                    other_intersection_centers[0, 0]:other_intersection_centers[0, 1],
+                    other_intersection_centers[1, 0]:other_intersection_centers[1, 1],
+                    other_intersection_centers[2, 0]:other_intersection_centers[2, 1]
+                ])
+            
+        self.local_function(function, other)
+
+    def intersection_(self, other: "VoxelSolid") -> None:
+        self.local_operator(np.logical_and, other)
+
+    def intersection(self, other: "VoxelSolid") -> "VoxelSolid":
+        vs = deepcopy(self)
+        vs.intersection_(other)
+        return vs
+
+    def union_(self, other: "VoxelSolid") -> None:
+        self.local_operator(np.logical_or, other)
+
+    def union(self, other: "VoxelSolid") -> "VoxelSolid":
+        vs = deepcopy(self)
+        vs.union_(other)
+        return vs
         
-        if subset == "best":
-            if input_point is None or self.voronoi is None or not is_PointType(input_point):
-                subset = "all"
-            else:
-                subset = "voronoi"
-
-        if subset == "all":
-            return self.get_all_centers_and_radii()
-        elif subset == "voronoi":
-            if input_point is None:
-                raise Exception("Input point must not be None")
-            voronoi_center: PointSequenceType
-            voronoi_radius: NumberSequenceType
-            _, voronoi_center, voronoi_radius = self.get_voronoi_center_and_radius(input_point)
-            return voronoi_center, voronoi_radius
-        elif subset == "surface":
-            return self.get_surface_centers_and_radii()
-        elif subset == "internal":
-            return self.get_internal_centers_and_radii()
-        else:
-            raise ValueError("subset must be one of 'all', 'voronoi', 'surface', 'internal', 'best'")"""
+    def voxel_volume(self) -> float:
+        return self.resolution ** 3
+    
+    def volume(self) -> float:
+        return self.int_volume() * self.voxel_volume()
+    
+    def int_volume(self) -> int:
+        return np.count_nonzero(self.grid)

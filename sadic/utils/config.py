@@ -1,1 +1,1 @@
-default_steps_number = 32
+default_steps_number = 50

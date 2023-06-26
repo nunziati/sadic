@@ -191,25 +191,52 @@ def sadic_one_shot(protein_multisphere, probe_radius, steps_number):
     return a
 
 
-def sadic_original_voxel(protein_solid: VoxelSolid, probe_radius, steps_number):
-    quantizer = RegularStepsCartesianQuantizer(steps_number)
-    sphere = Sphere(np.array([0., 0., 0.]), probe_radius)
-    points, _ = quantizer.get_points_and_volumes(sphere)
+def sadic_original_voxel(protein_solid: VoxelSolid, probe_radius: float):
+    """from tqdm import tqdm
     centers = protein_solid.multisphere.get_all_centers()
 
-    quantum_number = points.shape[0]
     center_number = centers.shape[0]
-    
-    points = np.empty((center_number, quantum_number, 3), dtype=np.float32)
+    depth_idx = np.empty(center_number, dtype=np.float32)
 
-    for idx, center in enumerate(centers):
-        sphere = Sphere(center, probe_radius)
-        points[idx], _ = quantizer.get_points_and_volumes(sphere)
+    for idx, center in tqdm(enumerate(centers)):
+        sphere = VoxelSolid([Sphere(center, probe_radius)], resolution=protein_solid.resolution, extreme_coordinates=protein_solid.extreme_coordinates)
+        sphere_volume = sphere.int_volume()
+        sphere.intersection_(protein_solid)
+        depth_idx[idx] = 2 * (1 - sphere.int_volume() / sphere_volume)
 
-    shape = points.shape
-    points = points.reshape((-1, 3))
+    count = depth_idx[depth_idx == 0.].shape[0]"""
 
-    depth_idx = 2 * (1 - protein_solid.is_inside(points).reshape(shape[:-1]).sum(axis=1) / quantum_number)
+    """from tqdm import tqdm
+    centers = protein_solid.multisphere.get_all_centers()
+
+    center_number = centers.shape[0]
+    origin = protein_solid.grid_to_cartesian(protein_solid.dimensions // 2)
+
+    origin_sphere = VoxelSolid([Sphere(origin, probe_radius)], resolution=protein_solid.resolution, extreme_coordinates=protein_solid.extreme_coordinates)
+    sphere_volume = origin_sphere.int_volume()
+
+    depth_idx = np.empty(center_number, dtype=np.float32)
+
+    for idx, center in tqdm(enumerate(centers)):
+        sphere = origin_sphere.translate(protein_solid.cartesian_to_grid(center) - protein_solid.cartesian_to_grid(origin))
+        sphere.intersection_(protein_solid)
+        depth_idx[idx] = 2 * (1 - sphere.int_volume() / sphere_volume)
+
+    count = depth_idx[depth_idx == 0.].shape[0]"""
+
+    from tqdm import tqdm
+    centers = protein_solid.multisphere.get_all_centers()
+
+    center_number = centers.shape[0]
+
+    depth_idx = np.empty(center_number, dtype=np.float32)
+
+    for idx, center in tqdm(enumerate(centers)):
+        sphere = VoxelSolid([Sphere(center, probe_radius)], resolution=protein_solid.resolution, align_with=protein_solid)
+        sphere_volume = sphere.int_volume()
+        sphere.intersection_(protein_solid)
+        intersection_volume = sphere.int_volume()
+        depth_idx[idx] = 2 * (1 - intersection_volume / sphere_volume)
 
     count = depth_idx[depth_idx == 0.].shape[0]
 

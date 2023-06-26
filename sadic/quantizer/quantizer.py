@@ -62,7 +62,7 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
         return grid_inside, np.full((grid_inside.shape[0],), volume, dtype=np.float32)
 
 
-class RegularSizeCartesianQuantizer(CartesianQuantizer):
+class RegularSizeCartesianQuantizer(RegularStepsCartesianQuantizer):
     def __init__(self) -> None:
         pass
     
