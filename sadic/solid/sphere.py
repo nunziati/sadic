@@ -17,7 +17,7 @@ class Sphere(Solid):
     def is_inside(
             self,
             points: NDArray[np.float32],
-            radii: NDArray[np.float32] | None = None) -> NDArray[np.float32]:
+            radii: NDArray[np.float32] | None = None) -> NDArray[np.bool_]:
         if radii is None:
             return ((points - self.center) ** 2
                     ).sum(axis=1) <= self.radius ** 2

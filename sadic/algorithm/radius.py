@@ -1,18 +1,22 @@
+from typing import Type
+
 from numpy.typing import NDArray
 import numpy as np
 
 from sadic.solid import Sphere, Multisphere, VoxelSolid
-from sadic.quantizer import SphericalQuantizer, RegularStepsSphericalQuantizer
+from sadic.quantizer import (Quantizer, SphericalQuantizer,
+                             RegularStepsSphericalQuantizer)
 
-default_quantizer_class = RegularStepsSphericalQuantizer
-default_quantizer_kwargs = {"rho_steps_number": 10, "theta_steps_number": 36,
-                            "phi_steps_number": 18}
+default_quantizer_class: Type[Quantizer] = RegularStepsSphericalQuantizer
+default_quantizer_kwargs: dict[str, int] = {"rho_steps_number": 10,
+                                            "theta_steps_number": 36,
+                                            "phi_steps_number": 18}
 
 def find_candidate_max_radius_points(
         multisphere: Multisphere,
         quantizer_arg: SphericalQuantizer | None = None,
         min_radius: float | None = None,
-        multiplier: float = 10000,
+        multiplier: float = 10,
         exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32)
         ) -> tuple[NDArray[np.float32], float]:
     
@@ -27,9 +31,9 @@ def find_candidate_max_radius_points(
 
     max_radius_points: list[int] = [0]
 
+    idx: int
     for idx in range(centers.shape[0]):
-        if idx in exclude_points:
-            continue
+        if idx in exclude_points: continue
 
         radius: float = min_radius * multiplier
         sphere: Sphere = Sphere(centers[idx], radius)
@@ -66,6 +70,8 @@ def find_max_radius_point(
     quantizer: SphericalQuantizer = default_quantizer_class(
         **default_quantizer_kwargs) if quantizer_arg is None else quantizer_arg
 
+    candidate_max_radius_points: NDArray[np.float32]
+    max_radius: float
     candidate_max_radius_points, max_radius = find_candidate_max_radius_points(
         multisphere, quantizer, min_radius, multiplier=multiplier,
         exclude_points=exclude_points)
@@ -73,15 +79,17 @@ def find_max_radius_point(
     max_radii: NDArray[np.float32] = np.empty(
         candidate_max_radius_points.shape[0], dtype=np.float32)
 
+    idx: int
+    candidate: int
     for idx, candidate in enumerate(candidate_max_radius_points):
         candidate_point = multisphere.get_all_centers()[candidate]
 
-        a = max_radius 
-        b = max_radius * multiplier
+        a: float = max_radius 
+        b: float = max_radius * multiplier
         
         while b - a > bisection_threshold:
-            sphere = Sphere(candidate_point, (a + b) / 2)
-            points = quantizer.get_surface_points(sphere)
+            sphere: Sphere = Sphere(candidate_point, (a + b) / 2)
+            points: NDArray[np.float32] = quantizer.get_surface_points(sphere)
 
             if multisphere.is_inside(points).all():
                 a = (a + b) / 2
@@ -103,25 +111,32 @@ def reduce_multisphere_step(
         ) -> tuple[Multisphere, float, NDArray[np.int32]]:
     
     quantizer: SphericalQuantizer = (
-        default_quantizer_class(**default_quantizer_kwargs) if quantizer_arg is None else
-        quantizer_arg)
+        default_quantizer_class(**default_quantizer_kwargs)
+        if quantizer_arg is None else quantizer_arg)
 
+    max_radius_point_idx: NDArray[np.int32]
+    max_radius: float
     max_radius_point_idx, max_radius = find_max_radius_point(
         multisphere, quantizer, min_radius, multiplier, exclude_points,
         bisection_threshold)
+    
+    max_radius_point: NDArray[np.float32]
     max_radius_point = multisphere.get_all_centers()[max_radius_point_idx]
 
-    sphere = Sphere(max_radius_point, max_radius)
+    sphere: Sphere = Sphere(max_radius_point, max_radius)
+    points: NDArray[np.float32]
+    radii: NDArray[np.float32]
     points, radii = multisphere.get_all_centers_and_radii()
 
-    is_inside = sphere.is_inside(points, radii)
-    points_to_add = np.concatenate((points[np.logical_not(is_inside)],
-                                    np.expand_dims(max_radius_point, axis=0)),
-                                    axis=0)
+    is_inside: NDArray[np.bool_] = sphere.is_inside(points, radii)
+    points_to_add: NDArray[np.float32] = np.concatenate(
+        (points[np.logical_not(is_inside)],
+         np.expand_dims(max_radius_point, axis=0)), axis=0)
 
-    radii_to_add = np.append(radii[np.logical_not(is_inside)], max_radius)
+    radii_to_add: NDArray[np.float32] = np.append(
+        radii[np.logical_not(is_inside)], max_radius)
  
-    new_multisphere = Multisphere(points_to_add, radii_to_add)
+    new_multisphere: Multisphere = Multisphere(points_to_add, radii_to_add)
     
     exclude_points = np.arange(
         points_to_add.shape[0] - exclude_points.shape[0] - 1,
@@ -142,10 +157,14 @@ def reduce_multisphere(
     quantizer: SphericalQuantizer = (
         default_quantizer_class(**default_quantizer_kwargs)
         if quantizer_arg is None else quantizer_arg)
+    new_multisphere: Multisphere
+    max_radius: float
+    exclude_points: NDArray[np.int32]
     new_multisphere, max_radius, exclude_points = reduce_multisphere_step(
         multisphere, quantizer, min_radius, multiplier, exclude_points,
         bisection_threshold)
-    count = 0
+    
+    count: int = 0
     while exclude_points.shape[0] != len(new_multisphere):
         print(count)
         print(max_radius)
@@ -163,14 +182,14 @@ def reduce_multisphere(
 
 def find_max_radius_point_voxel(voxel: VoxelSolid) -> tuple[int, float]:
     
-    centers_indexes = voxel.cartesian_to_grid(
+    centers_indexes: NDArray[np.int32] = voxel.cartesian_to_grid(
         voxel.multisphere.get_all_centers())
 
-    edt = voxel.edt()
+    edt: NDArray[np.float32] = voxel.edt()
     print("max edt", np.max(edt))
-    edt_centers = edt[centers_indexes[:, 0], centers_indexes[:, 1],
-                      centers_indexes[:, 2]]
-    max_edt_center = np.argmax(edt_centers)
-    max_edt = edt_centers[max_edt_center]
+    edt_centers: NDArray[np.float32] = edt[
+        centers_indexes[:, 0], centers_indexes[:, 1], centers_indexes[:, 2]]
+    max_edt_center: int = int(np.argmax(edt_centers))
+    max_edt: float = (edt_centers[max_edt_center])
 
-    return int(max_edt_center), float(max_edt)
+    return max_edt_center, max_edt
