@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Type
 
 from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
@@ -11,13 +12,9 @@ from sadic.solid import Solid, Sphere
 from sadic.pdb import PDBEntity
 from sadic.quantizer import Quantizer, RegularStepsCartesianQuantizer
 
-# RINOMINA I FILE IN MINUSCOLO
-# IMPORTA DIRETTAMENTE I MODULI INTERI, INVECE DELLE FUNZIONI/CLASSI
-# METTI TUTTI I SOLIDI NELLO STESSO FILE
-
 class Multisphere(Solid):
-    default_quantizer_class = RegularStepsCartesianQuantizer
-    default_quantizer_kwargs = {"steps_number": 32}
+    default_quantizer_class: Type[Quantizer] = RegularStepsCartesianQuantizer
+    default_quantizer_kwargs: dict[str, int] = {"steps_number": 32}
 
     def __init__(
             self,
@@ -60,7 +57,6 @@ class Multisphere(Solid):
                                                      dtype=np.float32)
         self.radii: NDArray[np.float32] = np.empty((length,),
                                                    dtype=np.float32)
-        self.voronoi: None = None
         self.extreme_coordinates: NDArray[np.float32] | None = None
 
     def build_from_centers_and_radii(
@@ -78,8 +74,8 @@ class Multisphere(Solid):
 
         self.build_empty(centers.shape[0])
 
-        self.centers = centers
-        self.radii = radii
+        self.centers: NDArray[np.float32] = centers
+        self.radii: NDArray[np.float32] = radii
 
     def build_from_spheres(self, spheres: Sequence[Sphere]) -> None:
         if len(spheres) == 0:
@@ -87,14 +83,16 @@ class Multisphere(Solid):
 
         self.build_empty(len(spheres))
 
+        idx: int
+        sphere: Sphere
         for idx, sphere in enumerate(spheres):
             self.centers[idx] = sphere.center
             self.radii[idx] = sphere.radius
 
     def build_from_sadic_protein(self, protein: PDBEntity) -> None:
         self.build_empty(len(protein))
-        self.centers = protein.get_centers()
-        self.radii = protein.get_radii()
+        self.centers: NDArray[np.float32] = protein.get_centers()
+        self.radii: NDArray[np.float32] = protein.get_radii()
 
     def build_from_biopython_protein(self, protein: Structure) -> None:
         sadic_protein: PDBEntity = PDBEntity(protein)
@@ -105,10 +103,11 @@ class Multisphere(Solid):
         self.build_from_sadic_protein(sadic_protein)
 
     def get_extreme_coordinates(self) -> NDArray[np.float32]:
-        ndim = 3
+        ndim: int = 3
 
-        extreme_coordinates = np.empty((ndim, 2), dtype=np.float32)
-
+        extreme_coordinates: NDArray[np.float32] = np.empty((ndim, 2),
+                                                            dtype=np.float32)
+        axis: int
         for axis in range(ndim):
             extreme_coordinates[axis, 0] = np.min(
                 self.centers[:, axis] - self.radii)
@@ -153,15 +152,13 @@ class Multisphere(Solid):
         else:
             quantizer = quantizer_arg
 
+        points: NDArray[np.float32]
         points, _ = quantizer.get_points_and_volumes(sphere)
 
         if get_volumes:
             return self.point_is_inside(points)
 
         return self.point_is_inside(points)
-
-    def compute_voronoi(self) -> None:
-        raise NotImplementedError
 
     def get_all_centers(self):
         return self.centers
@@ -171,39 +168,6 @@ class Multisphere(Solid):
 
     def get_all_centers_and_radii(self):
         return self.get_all_centers(), self.get_all_radii()
-
-    def get_voronoi_center(self, input_point):
-        raise NotImplementedError
-
-    def get_voronoi_radius(self, arg):
-        raise NotImplementedError
-    
-    def get_voronoi_center_and_radius(self, input_point):
-        raise NotImplementedError
-
-    def get_surface_centers(self):
-        raise NotImplementedError
-
-    def get_surface_radii(self):
-        raise NotImplementedError
-
-    def get_surface_centers_and_radii(self):
-        return self.get_surface_centers(), self.get_surface_radii()
-
-    def get_internal_centers(self):
-        raise NotImplementedError
-
-    def get_internal_radii(self):
-        raise NotImplementedError
-        
-    def get_internal_centers_and_radii(self):
-        return self.get_internal_centers(), self.get_internal_radii()
-
-    def get_candidate_centers_and_radii(
-            self,
-            input_point = None,
-            subset = "best"):
-        raise NotImplementedError
         
     def __len__(self) -> int:
         return self.centers.shape[0]

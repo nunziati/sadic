@@ -1,1 +1,1 @@
-default_steps_number = 50
+default_steps_number: int = 50

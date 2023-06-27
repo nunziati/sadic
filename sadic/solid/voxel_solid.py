@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, Type
 
 from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
@@ -15,8 +15,8 @@ from sadic.pdb import PDBEntity
 from sadic.quantizer import Quantizer, RegularStepsCartesianQuantizer
 
 class VoxelSolid(Solid):
-    default_quantizer_class = RegularStepsCartesianQuantizer
-    default_quantizer_kwargs = {"steps_number": 32}
+    default_quantizer_class: Type[Quantizer] = RegularStepsCartesianQuantizer
+    default_quantizer_kwargs: dict[str, int] = {"steps_number": 32}
 
     def __init__(
             self,
@@ -28,14 +28,12 @@ class VoxelSolid(Solid):
             arg2: None | NDArray[np.float32] = None,
             resolution: float = 0.3,
             extreme_coordinates: None | NDArray[np.float32] = None,
-            align_with: "None | VoxelSolid" = None
-            ) -> None:
-       
+            align_with: "None | VoxelSolid" = None) -> None:
         if isinstance(arg1, Multisphere):
             self.build_from_multisphere(
                 arg1, resolution, extreme_coordinates=extreme_coordinates)
         else:
-            multisphere = Multisphere(arg1, arg2)
+            multisphere: Multisphere = Multisphere(arg1, arg2)
             self.build_from_multisphere(
                 multisphere, resolution,
                 extreme_coordinates=extreme_coordinates, align_with=align_with)
@@ -47,12 +45,12 @@ class VoxelSolid(Solid):
             extreme_coordinates: None | NDArray[np.float32] = None,
             align_with: "None | VoxelSolid" = None
             ) -> None:
-        
-        self.multisphere = multisphere
-        self.resolution = resolution
+        self.multisphere: Multisphere = multisphere
+        self.resolution: float = resolution
 
         if extreme_coordinates is None:
-            self.extreme_coordinates = multisphere.get_extreme_coordinates()
+            self.extreme_coordinates: NDArray[np.float32] = (
+                multisphere.get_extreme_coordinates())
             self.extreme_coordinates[:, 1] += self.resolution * np.modf(
                 (self.extreme_coordinates[:, 1]
                  - self.extreme_coordinates[:, 0]) / self.resolution)[0]
@@ -60,24 +58,27 @@ class VoxelSolid(Solid):
                 if self.resolution != align_with.resolution:
                     raise ValueError(
                         "resolution must be the same as align_with.resolution")
-                grid_offset = (align_with.extreme_coordinates[:, 0]
-                               - self.extreme_coordinates[:, 0]
-                               ) / self.resolution
+                grid_offset: NDArray[np.float32] = (
+                    align_with.extreme_coordinates[:, 0]
+                    - self.extreme_coordinates[:, 0]) / self.resolution
                 self.extreme_coordinates = self.extreme_coordinates + (
                     (grid_offset - np.round(grid_offset))
                      * self.resolution).reshape(-1, 1)
         else:
-            self.extreme_coordinates = extreme_coordinates
+            self.extreme_coordinates: NDArray[np.float32] = extreme_coordinates
 
-        self.dimensions = np.ceil(
+        self.dimensions: NDArray[np.int32] = np.ceil(
             (self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0])
             / self.resolution).astype(np.int32)
-        self.grid = np.empty(self.dimensions, dtype=np.bool_)
+        self.grid: NDArray[np.bool_] = np.empty(
+            self.dimensions, dtype=np.bool_)
             
         if len(self.multisphere) == 1:
             self.grid = multisphere.is_inside(self.grid_to_cartesian(
                 self.get_all_grid_coordinates())).reshape(self.dimensions)
         else:
+            center: NDArray[np.float32]
+            radius: float
             for center, radius in tqdm(
                     zip(*self.multisphere.get_all_centers_and_radii())):
                 sphere = VoxelSolid(
@@ -112,12 +113,12 @@ class VoxelSolid(Solid):
     def get_extreme_coordinates(self) -> NDArray[np.float32]:
         return self.extreme_coordinates
     
-    def remove_holes_from_grid(self) -> NDArray[np.bool_]:
-        return label(self.grid.astype(np.int32))[0] != 0
+    def remove_holes_(self) -> None:
+        self.grid = label(self.grid.astype(np.int32))[0] != 0
     
     def remove_holes(self, *args, **kwargs) -> "VoxelSolid":
-        vs = deepcopy(self)
-        vs.grid = vs.remove_holes_from_grid(*args, **kwargs)
+        vs: VoxelSolid = deepcopy(self)
+        vs.remove_holes_(*args, **kwargs)
         return vs
 
     def edt(self) -> NDArray[np.float32]:
@@ -127,12 +128,13 @@ class VoxelSolid(Solid):
         if shift.ndim != 1 or shift.shape[0] != 3:
             raise ValueError("shift must be a 1D array of 3 elements")
 
-        vs = deepcopy(self)
+        vs: VoxelSolid = deepcopy(self)
         
         vs.grid = np.roll(vs.grid, shift, axis=(0, 1, 2))
 
+        axis: int
         for axis in range(3):
-            array_slice = [slice(None)] * vs.grid.ndim
+            array_slice: list[slice] = [slice(None)] * vs.grid.ndim
             if shift[axis] > 0:
                 array_slice[axis] = slice(0, shift[axis])
                 vs.grid[tuple(array_slice)] = False
@@ -162,17 +164,15 @@ class VoxelSolid(Solid):
                 np.logical_and(points[:, 0] > self.extreme_coordinates[0, 0],
                                points[:, 0] < self.extreme_coordinates[0, 1]),
                 np.logical_and(points[:, 1] > self.extreme_coordinates[1, 0],
-                               points[:, 1] < self.extreme_coordinates[1, 1])
-            ),
+                               points[:, 1] < self.extreme_coordinates[1, 1])),
             np.logical_and(points[:, 2] > self.extreme_coordinates[2, 0],
-                           points[:, 2] < self.extreme_coordinates[2, 1])
-        )
+                           points[:, 2] < self.extreme_coordinates[2, 1]))
 
     def point_is_inside(
             self,
             points: NDArray[np.float32]) -> NDArray[np.bool_]:
-        output = self.point_is_inside_boundaries(points)
-        grid_points = self.cartesian_to_grid(points[output])
+        output: NDArray[np.bool_] = self.point_is_inside_boundaries(points)
+        grid_points: NDArray[np.int32] = self.cartesian_to_grid(points[output])
         output[output] = self.grid[grid_points[:, 0], grid_points[:, 1],
                                    grid_points[:, 2]]
         return output
@@ -190,6 +190,7 @@ class VoxelSolid(Solid):
         else:
             quantizer = quantizer_arg
 
+        points: NDArray[np.float32]
         points, _ = quantizer.get_points_and_volumes(sphere)
 
         if get_volumes:
@@ -197,40 +198,48 @@ class VoxelSolid(Solid):
 
         return self.point_is_inside(points)
 
-    def local_function(self, function: Callable, other: "VoxelSolid") -> None:
+    def local_function(
+            self,
+            function: Callable[["VoxelSolid", "VoxelSolid", NDArray[np.int32],
+                                NDArray[np.int32]], None],
+            other: "VoxelSolid") -> None:
          # check if grids are aligned
         if self.resolution != other.resolution:
             raise ValueError("Grids must have the same resolution")
-        displacement = (self.extreme_coordinates - other.extreme_coordinates
-                        ) / self.resolution
-        if np.any(np.round(displacement- np.round(displacement, decimals=2),
+        displacement: NDArray[np.float32] = ((self.extreme_coordinates
+                                              - other.extreme_coordinates)
+                                              / self.resolution)
+        if np.any(np.round(displacement - np.round(displacement, decimals=2),
                            decimals=2)):
             raise ValueError("Grids must be aligned")
         
-        # find the intersection points of the grids
-        min_intersection_centers = np.max(np.stack((
+        min_intersection_centers: NDArray[np.float32] = np.max(np.stack((
             self.extreme_coordinates[:, 0], other.extreme_coordinates[:, 0]),
             axis=1), axis=1) + self.resolution / 2
-        max_intersection_centers = np.min(np.stack((
+        max_intersection_centers: NDArray[np.float32] = np.min(np.stack((
             self.extreme_coordinates[:, 1], other.extreme_coordinates[:, 1]),
             axis=1), axis=1) + self.resolution / 2
 
-        self_intersection_centers = np.stack((
+        self_intersection_extremes: NDArray[np.int32] = np.stack((
             self.cartesian_to_grid(min_intersection_centers),
             self.cartesian_to_grid(max_intersection_centers)), axis=1)
-        other_intersection_centers = np.stack((
+        other_intersection_extremes: NDArray[np.int32] = np.stack((
             other.cartesian_to_grid(min_intersection_centers),
             other.cartesian_to_grid(max_intersection_centers)), axis=1)
 
-        function(self, other, self_intersection_centers,
-                 other_intersection_centers)
+        function(self, other, self_intersection_extremes,
+                 other_intersection_extremes)
 
-    def local_operator(self, operator: Callable, other: "VoxelSolid") -> None:
+    def local_operator(
+            self,
+            operator: Callable[[NDArray[np.bool_], NDArray[np.bool_]],
+                               NDArray[np.bool_]],
+            other: "VoxelSolid") -> None:
         def function(
-                self,
-                other,
-                self_intersection_extremes,
-                other_intersection_extremes):
+                self: VoxelSolid,
+                other: VoxelSolid,
+                self_intersection_extremes: NDArray[np.int32],
+                other_intersection_extremes: NDArray[np.int32]) -> None:
             self.grid[
                 self_intersection_extremes[0, 0]
                 :self_intersection_extremes[0, 1],
@@ -262,7 +271,7 @@ class VoxelSolid(Solid):
         self.local_operator(np.logical_and, other)
 
     def intersection(self, other: "VoxelSolid") -> "VoxelSolid":
-        vs = deepcopy(self)
+        vs: VoxelSolid = deepcopy(self)
         vs.intersection_(other)
         return vs
 
@@ -270,7 +279,7 @@ class VoxelSolid(Solid):
         self.local_operator(np.logical_or, other)
 
     def union(self, other: "VoxelSolid") -> "VoxelSolid":
-        vs = deepcopy(self)
+        vs: VoxelSolid = deepcopy(self)
         vs.union_(other)
         return vs
         

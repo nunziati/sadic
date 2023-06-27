@@ -4,7 +4,7 @@ from numpy.typing import NDArray
 from sadic.solid import Solid
 
 class Sphere(Solid):
-    def __init__(self, center: NDArray[np.float32], radius: float):
+    def __init__(self, center: NDArray[np.float32], radius: float) -> None:
         if center.shape != (3,):
             raise ValueError(
                 "must be numpy.ndarray objects with shape (3,) "

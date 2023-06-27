@@ -8,27 +8,25 @@ from numpy.typing import NDArray
 
 
 class PDBEntity:
-    _pdb_code_regex = r"[1-9][a-zA-Z0-9]{3}"
-    _pdb_url_regex = (
-        r"(http[s]?://)?www.rcsb.org/structure/"
-        + _pdb_code_regex + r"[/]?"
-    )
+    _pdb_code_regex: str = r"[1-9][a-zA-Z0-9]{3}"
+    _pdb_url_regex: str = (r"(http[s]?://)?www.rcsb.org/structure/"
+                           + _pdb_code_regex + r"[/]?")
 
-    vdw_radii_2004 = {
+    vdw_radii_2004: dict[str, float] = {
         'C': 1.7,
         'N': 1.5,
         'O': 1.4,
         'S': 1.85,
     }
 
-    vdw_radii_2023 = {
+    vdw_radii_2023: dict[str, float] = {
         "C": 1.7,
         "N": 1.55,
         "O": 1.52,
         "S": 1.8,
     }
 
-    vdw_radii = vdw_radii_2004
+    vdw_radii: dict[str, float] = vdw_radii_2004
 
     def __init__(
             self,
@@ -103,7 +101,7 @@ class PDBEntity:
         self.radii: NDArray[np.float32] | None = None
 
     def build_from_biopandas(self, arg: PandasPdb) -> None:
-        self.entity = arg
+        self.entity: PandasPdb = arg
         self.complete_build_from_entity()
 
     def build_from_biopython(self, arg: Structure) -> None:
@@ -144,9 +142,9 @@ class PDBEntity:
     def get_radii(
             self,
             probe_radius: float | None = None) -> NDArray[np.float32]:
-        final_probe_radius: float = \
-            probe_radius if probe_radius is not None else min(
-            PDBEntity.vdw_radii.values())
+        final_probe_radius: float = (
+            probe_radius if probe_radius is not None
+            else min(PDBEntity.vdw_radii.values()))
             
         if self.radii is None or self.last_probe_radius != final_probe_radius:
             self.last_probe_radius = final_probe_radius
