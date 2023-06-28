@@ -254,18 +254,16 @@ class PDBEntity:
     def __len__(self) -> int:
         r"""Returns the number of atoms in the PDBEntity object.
 
-        Returns:
-            int:
-                The number of atoms in the PDBEntity object.
+        Returns (int):
+            The number of atoms in the PDBEntity object.
         """
         return len(self.atoms)
 
     def get_centers(self) -> NDArray[np.float32]:
         r"""Returns the coordinates of the atoms in the PDBEntity object.
 
-        Returns:
-            NDArray[np.float32]:
-                The coordinates of the atoms in the PDBEntity object.
+        Returns (NDArray[np.float32]):
+            The coordinates of the atoms in the PDBEntity object.
         """
         return self.atoms
 
@@ -281,9 +279,8 @@ class PDBEntity:
                 The radius of the test atoms to be used to increase the atoms' radii. Defaults to
                 None.
 
-        Returns:
-            NDArray[np.float32]:
-                The radii of the atoms in the PDBEntity object, increased by the probe radius.
+        Returns (NDArray[np.float32]):
+            The radii of the atoms in the PDBEntity object, increased by the probe radius.
         """
         final_probe_radius: float = (
             probe_radius if probe_radius is not None else min(PDBEntity._vdw_radii.values())
