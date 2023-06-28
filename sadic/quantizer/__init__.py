@@ -1,3 +1,5 @@
+r"""init file for quantizer module."""
+
 from .quantizer import (
     Quantizer,
     CartesianQuantizer,
@@ -5,9 +7,6 @@ from .quantizer import (
     RegularSizeCartesianQuantizer,
     SphericalQuantizer,
     RegularStepsSphericalQuantizer,
-    RegularSizeSphericalQuantizer,
-    AdaptiveSphericalQuantizer,
-    SphereSamplerQuantizer
 )
 
 __all__ = [
@@ -17,7 +16,4 @@ __all__ = [
     "RegularSizeCartesianQuantizer",
     "SphericalQuantizer",
     "RegularStepsSphericalQuantizer",
-    "RegularSizeSphericalQuantizer",
-    "AdaptiveSphericalQuantizer",
-    "SphereSamplerQuantizer"
 ]
