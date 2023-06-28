@@ -1,1 +1,1 @@
-r"""init file for algorithm module."""
+r"""init file for algorithm package."""

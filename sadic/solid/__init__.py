@@ -1,3 +1,5 @@
+r"""init file for solid package."""
+
 from .solid import Solid
 from .sphere import Sphere
 from .multisphere import Multisphere

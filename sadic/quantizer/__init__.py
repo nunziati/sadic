@@ -1,4 +1,4 @@
-r"""init file for quantizer module."""
+r"""init file for quantizer package."""
 
 from .quantizer import (
     Quantizer,

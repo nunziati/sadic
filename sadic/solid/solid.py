@@ -1,17 +1,32 @@
+r"""Defines the Solid abstract class."""
+
 from abc import ABC, abstractmethod
 
 import numpy as np
 from numpy.typing import NDArray
 
 class Solid(ABC):
-    @abstractmethod
-    def __init__(self, *args) -> None:
-        pass
+    r"""Abstract class for solids
     
-    @abstractmethod
-    def is_inside(self, *args) -> NDArray[np.bool_]:
-        pass
+    Attributes:
+        None
+        
+    Methods:
+        __init__:
+            Abstract constructor for solids.
+        get_extreme_coordinates:
+            Abstract method to get the extreme coordinates of the solid.
+    """
 
     @abstractmethod
-    def get_extreme_coordinates(self, *args) -> NDArray[np.float32]:
-        pass
+    def __init__(self) -> None:
+        r"""Abstract constructor for solids."""
+
+    @abstractmethod
+    def get_extreme_coordinates(self) -> NDArray[np.float32]:
+        r"""Abstract method to get the extreme coordinates of the solid.
+        
+        Returns:
+            NDArray[np.float32]:
+                A numpy array of floats representing the extreme coordinates of the solid.
+        """

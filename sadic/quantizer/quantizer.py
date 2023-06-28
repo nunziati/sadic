@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import NDArray
 
-from sadic.solid import Solid, Sphere
+from sadic.solid import Solid, Sphere, Multisphere
 
 
 class Quantizer(ABC):
@@ -157,7 +157,7 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
         self.z_steps_number: int = z_steps_number
 
     def get_points_and_volumes(
-        self, solid: Solid
+        self, solid: Sphere | Multisphere
     ) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         r"""Returns the representative points and volumes of the quantized solid.
 
