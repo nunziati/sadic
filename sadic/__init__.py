@@ -1,3 +1,5 @@
+r"""init file for sadic package."""
+
 from .sadic import sadic
 
 __all__ = ["sadic"]
