@@ -1,11 +1,11 @@
 r"""Defines the VoxelSolid class."""
 
+from __future__ import annotations
 from collections.abc import Sequence
 from copy import deepcopy
 from typing import Callable, Type
 
 from tqdm import tqdm
-from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
 import numpy as np
 from numpy.typing import NDArray
@@ -13,7 +13,7 @@ from scipy.ndimage.measurements import label
 from scipy.ndimage.morphology import distance_transform_edt
 
 from sadic.solid import Solid, Sphere, Multisphere
-from sadic.pdb import PDBEntity
+from sadic.pdb import Model
 from sadic.quantizer import Quantizer, RegularStepsCartesianQuantizer
 
 
@@ -85,23 +85,23 @@ class VoxelSolid(Solid):
 
     def __init__(
         self,
-        arg1: (Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32]),
+        arg1: (Sequence[Sphere] | Model | Structure | NDArray[np.float32]),
         arg2: None | NDArray[np.float32] = None,
         resolution: float = 0.3,
         extreme_coordinates: None | NDArray[np.float32] = None,
-        align_with: "None | VoxelSolid" = None,
+        align_with: None | VoxelSolid = None,
     ) -> None:
         r"""Initializes the VoxelSolid building it from a given argument.
-        
+
         The argument can be of different types and the VoxelSolid is built accordingly. The
         constructor offers the possibility of choosing the resolution of the grid and the extreme
         coordinates of the solid. The built solid can also be aligned with another solid.
 
         Args:
-            arg1 (Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32]):
+            arg1 (Sequence[Sphere] | Model | Structure | NDArray[np.float32]):
                 The argument from which to build the VoxelSolid. It can be a sequence of spheres,
-                a PDBentity, a PandasPdb object, a BioPython Structure object or a numpy array of
-                shape (N, 3) containing the cartesian coordinates of the centers of the spheres.
+                a sadic.Model object, a BioPython Structure object or a numpy array of shape (N, 3)
+                containing the cartesian coordinates of the centers of the spheres.
             arg2 (None | NDArray[np.float32]):
                 If arg1 is a numpy array, arg2 must be a numpy array of shape (N,) containing the
                 radii of the spheres.
@@ -157,7 +157,7 @@ class VoxelSolid(Solid):
                 have the same resolution and the difference between the extreme coordinates of the
                 two grids is a multiple of the resolution.
         """
-        self.multisphere= multisphere
+        self.multisphere = multisphere
         self.resolution = resolution
 
         if extreme_coordinates is None:
@@ -201,7 +201,7 @@ class VoxelSolid(Solid):
 
     def get_all_grid_coordinates(self) -> NDArray[np.int32]:
         r"""Returns an array containing all the coordinates of the grid.
-        
+
         Returns (NDArray[np.int32]):
             An array of shape (N, 3) containing all the coordinates of the grid in the integer
             space.
@@ -215,11 +215,11 @@ class VoxelSolid(Solid):
 
     def cartesian_to_grid(self, coordinates: NDArray[np.float32]) -> NDArray[np.int32]:
         r"""Converts cartesian coordinates to grid coordinates in the space of the solid.
-        
+
         Args:
             coordinates (NDArray[np.float32]):
                 An array of shape (N, 3) containing the cartesian coordinates to convert.
-        
+
         Returns (NDArray[np.int32]):
             An array of shape (N, 3) containing the grid coordinates.
         """
@@ -236,7 +236,7 @@ class VoxelSolid(Solid):
         Args:
             coordinates (NDArray[np.int32]):
                 An array of shape (N, 3) containing the grid coordinates to convert.
-        
+
         Returns (NDArray[np.float32]):
             An array of shape (N, 3) containing the cartesian coordinates.
         """
@@ -262,7 +262,7 @@ class VoxelSolid(Solid):
         """
         self.grid = label(self.grid.astype(np.int32))[0] != 0
 
-    def remove_holes(self, *args, **kwargs) -> "VoxelSolid":
+    def remove_holes(self, *args, **kwargs) -> VoxelSolid:
         r"""Removes the holes in the solid and returns a new solid.
 
         Computes the connected components of the solid and removes the components that are not
@@ -284,7 +284,7 @@ class VoxelSolid(Solid):
         """
         return distance_transform_edt(self.grid, sampling=self.resolution)
 
-    def translate(self, shift: NDArray[np.int32]) -> "VoxelSolid":
+    def translate(self, shift: NDArray[np.int32]) -> VoxelSolid:
         r"""Translates the solid by the given shift in the grid space and returns a new solid.
 
         Args:
@@ -349,7 +349,7 @@ class VoxelSolid(Solid):
         Args:
             points (NDArray[np.float32]):
                 The point(s) to check.
-        
+
         Returns (NDArray[np.bool_]):
             A numpy.ndarray object of shape (n,) containing the result of the check for each point.
         """
@@ -389,7 +389,7 @@ class VoxelSolid(Solid):
         self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False
     ) -> NDArray[np.bool_]:
         r"""Checks if a sphere is inside the multisphere.
-        
+
         Quantizes the sphere and checks if the quantized points are inside the solid. The method can
         also return the volumes of the quantized cells containing the points of the sphere.
 
@@ -423,10 +423,8 @@ class VoxelSolid(Solid):
 
     def local_function(
         self,
-        function: Callable[
-            ["VoxelSolid", "VoxelSolid", NDArray[np.int32], NDArray[np.int32]], None
-        ],
-        other: "VoxelSolid",
+        function: Callable[[VoxelSolid, VoxelSolid, NDArray[np.int32], NDArray[np.int32]], None],
+        other: VoxelSolid,
     ) -> None:
         r"""Finds the intersection of two voxel solids and applies a given function to it.
 
@@ -481,18 +479,19 @@ class VoxelSolid(Solid):
     def local_operator(
         self,
         operator: Callable[[NDArray[np.bool_], NDArray[np.bool_]], NDArray[np.bool_]],
-        other: "VoxelSolid",
+        other: VoxelSolid,
     ) -> None:
         r"""Applies a function that operates on the intersection of two voxel solids inplace.
-        
+
         Writes the result in the first one.
-        
+
         Args:
             operator (Callable[[NDArray[np.bool_], NDArray[np.bool_]], NDArray[np.bool_]]):
                 The function to apply.
             other (VoxelSolid):
                 The other solid.
         """
+
         def function(
             self: VoxelSolid,
             other: VoxelSolid,
@@ -518,16 +517,16 @@ class VoxelSolid(Solid):
 
         self.local_function(function, other)
 
-    def intersection_(self, other: "VoxelSolid") -> None:
+    def intersection_(self, other: VoxelSolid) -> None:
         r"""Finds the intersection of two voxel solids and writes the result in the first one.
-        
+
         Args:
             other (VoxelSolid):
                 The other solid.
         """
         self.local_operator(np.logical_and, other)
 
-    def intersection(self, other: "VoxelSolid") -> "VoxelSolid":
+    def intersection(self, other: VoxelSolid) -> VoxelSolid:
         r"""Finds the intersection of two voxel solids and returns it as a new solid.
 
         Args:
@@ -538,16 +537,16 @@ class VoxelSolid(Solid):
         new_voxel_solid.intersection_(other)
         return new_voxel_solid
 
-    def union_(self, other: "VoxelSolid") -> None:
+    def union_(self, other: VoxelSolid) -> None:
         r"""Finds the union of two voxel solids and writes the result in the first one.
-        
+
         Args:
             other (VoxelSolid):
                 The other solid.
         """
         self.local_operator(np.logical_or, other)
 
-    def union(self, other: "VoxelSolid") -> "VoxelSolid":
+    def union(self, other: VoxelSolid) -> VoxelSolid:
         r"""Finds the union of two voxel solids and returns it as a new solid.
 
         Args:
@@ -560,7 +559,7 @@ class VoxelSolid(Solid):
 
     def voxel_volume(self) -> float:
         r"""Returns the volume of a voxel.
-        
+
         Returns (float):
             The volume of a voxel.
         """
@@ -568,7 +567,7 @@ class VoxelSolid(Solid):
 
     def volume(self) -> float:
         r"""Returns the volume of the solid.
-        
+
         Returns (float):
             The volume of the solid.
         """

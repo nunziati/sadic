@@ -12,6 +12,7 @@ from sadic.quantizer import (
     RegularStepsCartesianQuantizer,
 )
 from sadic.solid import Multisphere
+from sadic.pdb import Model
 
 default_quantizer_class: Type[Quantizer] = RegularStepsSphericalQuantizer
 default_quantizer_kwargs: dict[str, int] = {
@@ -438,7 +439,7 @@ def sadic_one_shot(
 
 
 def sadic_original_voxel(
-    protein_solid: VoxelSolid, probe_radius: float
+    protein_solid: VoxelSolid, filtered_model: Model, probe_radius: float
 ) -> tuple[NDArray[np.float32], int]:
     r"""Compute the saidc depth indexes of the atoms of a protein.
 
@@ -447,6 +448,9 @@ def sadic_original_voxel(
     Args:
         protein_solid (VoxelSolid):
             The voxelized solid describing the protein.
+        filtered_model (Model):
+            The model of the protein, filtered to contain only the atoms of interest, on which the
+            depth indexes are computed.
         probe_radius (float):
             The radius of the probe sphere.
 
@@ -455,7 +459,7 @@ def sadic_original_voxel(
             The sadic depth indexes of the atoms of the protein and the number of atoms with minimum
             depth index.
     """
-    centers: NDArray[np.float32] = protein_solid.multisphere.get_all_centers()
+    centers: NDArray[np.float32] = filtered_model.atoms
 
     center_number: int = centers.shape[0]
 

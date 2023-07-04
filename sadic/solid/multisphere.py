@@ -3,14 +3,13 @@ r"""Defines the Multisphere class."""
 from collections.abc import Sequence
 from typing import Type
 
-from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
 import numpy as np
 from numpy.typing import NDArray
 from scipy.spatial.distance import cdist
 
 from sadic.solid import Solid, Sphere
-from sadic.pdb import PDBEntity
+from sadic.pdb import Model
 from sadic.quantizer import Quantizer, RegularStepsCartesianQuantizer
 
 
@@ -19,8 +18,8 @@ class Multisphere(Solid):
 
     Can be used to check if a (set of) point(s) is inside the set of spheres. Can also be used to
     get the extreme coordinates of the set of spheres. The spheres can be built from a set of
-    spheres, a PDBEntity, a PandasPdb, a biopandas Structure representing a protein or from a set of
-    centers and radii.
+    spheres, a sadic.Model, a biopandas Structure representing a protein or from a set of centers
+    and radii.
 
     Attributes:
         centers (NDArray[np.float32]):
@@ -38,9 +37,7 @@ class Multisphere(Solid):
         build_from_spheres:
             Method to build the multisphere from a set of spheres.
         build_from_sadic_protein:
-            Method to build the multisphere from a sadic.PDBEntity.
-        build_from_biopandas_protein:
-            Method to build the multisphere from a PandasPdb.
+            Method to build the multisphere from a sadic.Model.
         build_from_structure:
             Method to build the multisphere from a biopandas Structure.
         build_from_centers_and_radii:
@@ -68,20 +65,20 @@ class Multisphere(Solid):
 
     def __init__(
         self,
-        arg1: (Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32]),
+        arg1: (Sequence[Sphere] | Model | Structure | NDArray[np.float32]),
         arg2: None | NDArray[np.float32] = None,
     ) -> None:
         r"""Initializes a multisphere based on the given argument(s).
 
-        The multisphere can be built from a set of spheres, a PDBEntity, a PandasPdb, a biopandas
-        Structure representing a protein or from a set of centers and radii. The build method is
-        chosen based on the type of the first argument.
+        The multisphere can be built from a set of spheres, a Model, a biopandas Structure
+        representing a protein or from a set of centers and radii. The build method is chosen based
+        on the type of the first argument.
 
         Args:
-            arg1 (Sequence[Sphere] | PDBEntity | PandasPdb | Structure | NDArray[np.float32]):
-                The first argument can be a sequence of spheres, a PDBEntity, a PandasPdb, a
-                biopandas Structure representing a protein or a numpy array of floats representing
-                the centers of the spheres.
+            arg1 (Sequence[Sphere] | Model | Structure | NDArray[np.float32]):
+                The first argument can be a sequence of spheres, a Model, a biopandas Structure
+                representing a protein or a numpy array of floats representing the centers of the
+                spheres.
             arg2 (None | NDArray[np.float32]):
                 The second argument can be a numpy array of floats representing the radii of the
                 spheres. It is only used if the first argument is a numpy array of floats
@@ -102,17 +99,12 @@ class Multisphere(Solid):
                     self.build_from_spheres(arg1)
                 else:
                     raise TypeError("Sequence argument must be a sequence of Spheres")
-            elif isinstance(arg1, PDBEntity):
+            elif isinstance(arg1, Model):
                 self.build_from_sadic_protein(arg1)
-            elif isinstance(arg1, PandasPdb):
-                self.build_from_biopandas_protein(arg1)
             elif isinstance(arg1, Structure):
                 self.build_from_biopython_protein(arg1)
             else:
-                raise TypeError(
-                    "Single argument must be a sequence of Spheres, PDBEntity, PandasPdb or "
-                    "Structure"
-                )
+                raise TypeError("Single argument must be a sequence of Spheres, Model or Structure")
         else:
             if isinstance(arg1, np.ndarray) and isinstance(arg2, np.ndarray):
                 self.build_from_centers_and_radii(arg1, arg2)
@@ -129,7 +121,7 @@ class Multisphere(Solid):
         Args:
             length (int):
                 The length of the multisphere, i.e. the number of spheres composing the multisphere.
-        
+
         Raises:
             ValueError:
                 If the length is not a positive integer.
@@ -151,7 +143,7 @@ class Multisphere(Solid):
                 The centers of the spheres composing the multisphere.
             radii (NDArray[np.float32]):
                 The radii of the spheres composing the multisphere.
-        
+
         Raises:
             ValueError:
                 If the arrays representing the centers and radii are not valid i.e. if they are not
@@ -175,7 +167,7 @@ class Multisphere(Solid):
         Args:
             spheres (Sequence[Sphere]):
                 The spheres composing the multisphere.
-        
+
         Raises:
             ValueError:
                 If the sequence of spheres is empty.
@@ -191,12 +183,12 @@ class Multisphere(Solid):
             self.centers[idx] = sphere.center
             self.radii[idx] = sphere.radius
 
-    def build_from_sadic_protein(self, protein: PDBEntity) -> None:
-        r"""Builds the multisphere from a PDBEntity.
-        
+    def build_from_sadic_protein(self, protein: Model) -> None:
+        r"""Builds the multisphere from a Model.
+
         Args:
-            protein (PDBEntity):
-                The PDBEntity representing the protein.
+            protein (Model):
+                The Model representing the protein.
         """
         self.build_empty(len(protein))
         self.centers: NDArray[np.float32] = protein.get_centers()
@@ -204,27 +196,14 @@ class Multisphere(Solid):
 
     def build_from_biopython_protein(self, protein: Structure) -> None:
         r"""Builds the multisphere from a biopython Structure.
-        
-        Args:
-            protein (Structure):
-                The biopython Structure representing the protein.
-        """
-        sadic_protein: PDBEntity = PDBEntity(protein)
-        self.build_from_sadic_protein(sadic_protein)
 
-    def build_from_biopandas_protein(self, protein: PandasPdb) -> None:
-        r"""Builds the multisphere from a biopandas PandasPdb.
-
-        Args:
-            protein (PandasPdb):
-                The biopandas PandasPdb representing the protein.
+        To be implemented.
         """
-        sadic_protein: PDBEntity = PDBEntity(protein)
-        self.build_from_sadic_protein(sadic_protein)
+        raise NotImplementedError
 
     def get_extreme_coordinates(self) -> NDArray[np.float32]:
         r"""Returns the extreme coordinates of the multisphere.
-        
+
         The extreme coordinates of a multisphere are the coordinates of the corners of the smallest
         axis-aligned bounding box containing the multisphere. They are computed by taking the
         minimum and maximum coordinates of the centers of the spheres composing the multisphere and
@@ -298,7 +277,7 @@ class Multisphere(Solid):
         self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False
     ) -> NDArray[np.bool_]:
         r"""Checks if a sphere is inside the multisphere.
-        
+
         Quantizes the sphere and checks if the quantized points are inside the multisphere. The
         method can also return the volumes of the quantized cells containing the points of the
         sphere.

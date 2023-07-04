@@ -1,4 +1,4 @@
 r"""init file for pdb package."""
-from .pdbentity import PDBEntity
+from .pdbentity import Model, PDBEntity
 
-__all__ = ["PDBEntity"]
+__all__ = ["Model", "PDBEntity"]
