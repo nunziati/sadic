@@ -224,9 +224,7 @@ class Multisphere(Solid):
 
         return extreme_coordinates
 
-    def is_inside(
-        self, arg: NDArray[np.float32] | Sphere, get_volumes: bool = False
-    ) -> NDArray[np.bool_]:
+    def is_inside(self, *args, **kwargs) -> NDArray[np.bool_]:
         r"""Checks if a (set of) point(s) or a sphere is inside the multisphere.
 
         Automatically detects if the argument is a point or a sphere and calls the appropriate
@@ -245,6 +243,8 @@ class Multisphere(Solid):
             of the sphere.
         """
         # TO DO: implement the get_volume option
+        arg: NDArray[np.float32] | Sphere = args[0]
+        get_volumes: bool = kwargs.get("get_volumes", False)
         if isinstance(arg, Sphere):
             return self.sphere_is_inside(arg, get_volumes=get_volumes)
         elif isinstance(arg, np.ndarray):

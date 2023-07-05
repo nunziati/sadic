@@ -50,9 +50,7 @@ class Sphere(Solid):
         self.center: NDArray[np.float32] = center
         self.radius: float = radius
 
-    def is_inside(
-        self, points: NDArray[np.float32], radii: NDArray[np.float32] | None = None
-    ) -> NDArray[np.bool_]:
+    def is_inside(self, *args, **kwargs) -> NDArray[np.bool_]:
         r"""Checks if a (set of) point(s) is inside the sphere.
 
         Args:
@@ -65,6 +63,8 @@ class Sphere(Solid):
         Returns (NDArray[np.bool_]):
             A numpy array of booleans representing whether the point(s) is inside the sphere.
         """
+        points: NDArray[np.float32] = args[0]
+        radii: NDArray[np.float32] | None = kwargs.get("radii", None)
         if radii is None:
             return ((points - self.center) ** 2).sum(axis=1) <= self.radius**2
 

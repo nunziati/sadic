@@ -41,16 +41,16 @@ class SadicModelResult:
             Initialize the result of the SADIC algorithm.
     """
 
-    def __init__(self, atom_idx: NDArray[np.int32], depth_index: NDArray[np.float32]) -> None:
+    def __init__(self, atom_index: NDArray[np.int32], depth_index: NDArray[np.float32]) -> None:
         r"""Initialize the result of the SADIC algorithm.
 
         Args:
-            atom_idx (NDArray[np.int32]):
+            atom_index (NDArray[np.int32]):
                 The index of the atoms of the protein.
             depth_index (NDArray[np.float32]):
                 The SADIC depth index of the atoms of the protein.
         """
-        self.atom_idx: NDArray[np.int32] = atom_idx
+        self.atom_index: NDArray[np.int32] = atom_index
         self.depth_index: NDArray[np.float32] = depth_index
 
 
@@ -123,6 +123,7 @@ def sadic(
     print("DONE")
 
     # retrieve probe_radius
+    original_probe_radius: None | float | int = probe_radius
     fixed_probe_radius: bool = False
     if probe_radius is not None:
         if not isinstance(probe_radius, int) and not isinstance(probe_radius, float):
@@ -142,6 +143,7 @@ def sadic(
 
             fixed_probe_radius = True
 
+    original_model_indexes: None | Sequence[int] = model_indexes
     model_indexes = model_indexes if model_indexes is not None else range(1, protein.nmodels + 1)
     results: list[SadicModelResult] = []
     for model_index in model_indexes:
@@ -173,17 +175,17 @@ def sadic(
                 protein.models[model_index].atom_indexes,
                 representation_options[representation]["depth_index_function"](
                     solid, filtered_model, probe_radius
-                ),
+                )[0],
             )
         )
         print("DONE")
 
     sadic_args: dict[str, Any] = {
         "representation": representation,
-        "probe_radius": probe_radius,
+        "probe_radius": original_probe_radius,
         "filter": filter_arg,
         "vdw_radii": vdw_radii,
-        "model_indexes": model_indexes,
+        "model_indexes": original_model_indexes,
     }
 
     return SadicEntityResult(results, sadic_args)
