@@ -10,28 +10,30 @@ from Bio.PDB.Structure import Structure
 from sadic.solid import Solid, Sphere, Multisphere, VoxelSolid
 from sadic.pdb import PDBEntity, Model
 from sadic.algorithm.radius import find_max_radius_point, find_max_radius_point_voxel
-from sadic.algorithm.depth import sadic_sphere, sadic_original_voxel
+from sadic.algorithm.depth import sadic_sphere as sadic_multisphere
+from sadic.algorithm.depth import sadic_original_voxel as sadic_voxel
+from sadic.utils import Repr
 
 
 representation_options: dict[str, dict[str, Any]] = {
     "multisphere": {
         "solid_type": Multisphere,
         "probe_radius_function": find_max_radius_point,
-        "depth_index_function": sadic_sphere,
+        "depth_index_function": sadic_multisphere,
     },
     "voxel": {
         "solid_type": VoxelSolid,
         "probe_radius_function": find_max_radius_point_voxel,
-        "depth_index_function": sadic_original_voxel,
+        "depth_index_function": sadic_voxel,
     },
 }
 
 
-class SadicModelResult:
+class SadicModelResult(Repr):
     r"""Result of the SADIC algorithm for a single model of a protein.
 
     Attributes:
-        atom_idx (NDArray[np.int32]):
+        atom_index (NDArray[np.int32]):
             The index of the atoms of the protein.
         depth_index (NDArray[np.float32]):
             The SADIC depth index of the atoms of the protein.
@@ -54,7 +56,7 @@ class SadicModelResult:
         self.depth_index: NDArray[np.float32] = depth_index
 
 
-class SadicEntityResult:
+class SadicEntityResult(Repr):
     r"""Result of the SADIC algorithm for an entity of a protein.
 
     Can be composed of multiple models.
@@ -96,10 +98,12 @@ def sadic(
         filter_arg (None | dict[str, str | int | Sequence[str] | Sequence[int]] | Sphere
         | NDArray[np.float32]):
             The filter to apply to the atoms of the protein. If None, no filter is applied. If a
-            dictionary, the keys are the columns of the PDB file and the values are the values to
-            select. If a Sphere, only the atoms inside the sphere are considered. If a numpy array,
-            it must be an array with shape (n_points, 3) containing the coordinates of the points to
-            compute the SADIC depth index of. Defaults to None.
+            Sphere, only the atoms inside the sphere are considered. If a numpy array, it must be an
+            array with shape (n_points, 3) containing the coordinates of the points to compute the
+            SADIC depth index of. If a dictionary, the keys are the columns of the PDB file and the
+            values are the values to select. The keys can be one of the following: "atom_number",
+            "atom_name", "residue_name", "residue_number", "chain_id", "element_symbol". The values
+            can be a single value or a list of values. Defaults to None.
         probe_radius (None | int | float):
             The radius of the probe to use to compute the SADIC depth index. If None, the optimal
             radius is computed for each model. If int, the radius is the same for all the models and

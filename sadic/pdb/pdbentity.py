@@ -11,9 +11,10 @@ import numpy as np
 from numpy.typing import NDArray
 
 from sadic.solid import Sphere
+from sadic.utils import Repr
 
 
-class Model:
+class Model(Repr):
     r"""A class representing a model of a pdb protein model.
 
     Attributes:
@@ -190,7 +191,7 @@ class Model:
         return model
 
 
-class PDBEntity:
+class PDBEntity(Repr):
     r"""A class representing a pdb protein structure or set of structures.
 
     Attributes:

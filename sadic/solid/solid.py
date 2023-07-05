@@ -5,8 +5,10 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import NDArray
 
+from sadic.utils import Repr
 
-class Solid(ABC):
+
+class Solid(ABC, Repr):
     r"""Abstract class for solids
 
     Attributes:

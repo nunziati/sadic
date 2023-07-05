@@ -6,9 +6,10 @@ import numpy as np
 from numpy.typing import NDArray
 
 from sadic.solid import Solid, Sphere
+from sadic.utils import Repr
 
 
-class Quantizer(ABC):
+class Quantizer(ABC, Repr):
     r"""Abstract class for quantizers.
 
     A quantizer is an object that quantizes a solid into a set of points and volumes. Possibly it
