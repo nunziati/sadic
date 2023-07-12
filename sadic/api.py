@@ -7,12 +7,11 @@ from numpy.typing import NDArray
 from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
 
-from sadic.solid import Solid, Sphere, Multisphere, VoxelSolid
-from sadic.pdb import PDBEntity, Model
+from sadic.solid import Solid, Multisphere, VoxelSolid
+from sadic.pdb import PDBEntity, Model, SadicModelResult, SadicEntityResult
 from sadic.algorithm.radius import find_max_radius_point, find_max_radius_point_voxel
 from sadic.algorithm.depth import sadic_sphere as sadic_multisphere
 from sadic.algorithm.depth import sadic_original_voxel as sadic_voxel
-from sadic.utils import Repr
 
 
 representation_options: dict[str, dict[str, Any]] = {
@@ -29,58 +28,12 @@ representation_options: dict[str, dict[str, Any]] = {
 }
 
 
-class SadicModelResult(Repr):
-    r"""Result of the SADIC algorithm for a single model of a protein.
-
-    Attributes:
-        atom_index (NDArray[np.int32]):
-            The index of the atoms of the protein.
-        depth_index (NDArray[np.float32]):
-            The SADIC depth index of the atoms of the protein.
-
-    Methods:
-        __init__:
-            Initialize the result of the SADIC algorithm.
-    """
-
-    def __init__(self, atom_index: NDArray[np.int32], depth_index: NDArray[np.float32]) -> None:
-        r"""Initialize the result of the SADIC algorithm.
-
-        Args:
-            atom_index (NDArray[np.int32]):
-                The index of the atoms of the protein.
-            depth_index (NDArray[np.float32]):
-                The SADIC depth index of the atoms of the protein.
-        """
-        self.atom_index: NDArray[np.int32] = atom_index
-        self.depth_index: NDArray[np.float32] = depth_index
-
-
-class SadicEntityResult(Repr):
-    r"""Result of the SADIC algorithm for an entity of a protein.
-
-    Can be composed of multiple models.
-
-    Attributes:
-        result_list (list[SadicModelResult]):
-            The list of results of the SADIC algorithm for each model of the protein.
-
-    Methods:
-        __init__:
-            Initialize the result of the SADIC algorithm.
-    """
-
-    def __init__(self, result_list: list[SadicModelResult], sadic_args: dict[str, Any]) -> None:
-        self.result_list: list[SadicModelResult] = result_list
-        self.sadic_args: dict[str, Any] = sadic_args
-
-
 def sadic(
     input_arg: str | PandasPdb | Structure,
     model_indexes: None | Sequence[int] = None,
-    filter_arg: None
+    filter_by: None
     | dict[str, str | int | Sequence[str] | Sequence[int]]
-    | Sphere
+    | tuple[NDArray[np.float32], float]
     | NDArray[np.float32] = None,
     probe_radius: None | int | float = None,
     vdw_radii: None | dict[str, float] = None,
@@ -95,15 +48,16 @@ def sadic(
         model_indexes (None | Sequence[int]):
             The indexes of the models of the protein to compute the SADIC depth index of. If None,
             all the models are considered. Defaults to None.
-        filter_arg (None | dict[str, str | int | Sequence[str] | Sequence[int]] | Sphere
-        | NDArray[np.float32]):
+        filter_by (None | dict[str, str | int | Sequence[str] | Sequence[int]]
+        | tuple[NDArray[np.float32], float] | NDArray[np.float32]):
             The filter to apply to the atoms of the protein. If None, no filter is applied. If a
-            Sphere, only the atoms inside the sphere are considered. If a numpy array, it must be an
-            array with shape (n_points, 3) containing the coordinates of the points to compute the
-            SADIC depth index of. If a dictionary, the keys are the columns of the PDB file and the
-            values are the values to select. The keys can be one of the following: "atom_number",
-            "atom_name", "residue_name", "residue_number", "chain_id", "element_symbol". The values
-            can be a single value or a list of values. Defaults to None.
+            tuple of a np.ndarray and a float, they are assumed to represent the center and radius
+            of a sphere and only the atoms inside the sphere are considered. If a numpy array, it
+            must be an array with shape (n_points, 3) containing the coordinates of the points to be
+            selected. If a dictionary, the keys are the columns of the PDB file and the values are
+            the values to select. The keys can be one of the following: "atom_number", "atom_name",
+            "residue_name", "residue_number", "chain_id", "element_symbol". The values can be a
+            single value or a list of values. Defaults to None.
         probe_radius (None | int | float):
             The radius of the probe to use to compute the SADIC depth index. If None, the optimal
             radius is computed for each model. If int, the radius is the same for all the models and
@@ -149,7 +103,7 @@ def sadic(
 
     original_model_indexes: None | Sequence[int] = model_indexes
     model_indexes = model_indexes if model_indexes is not None else range(1, protein.nmodels + 1)
-    results: list[SadicModelResult] = []
+    results: dict[int, SadicModelResult] = {}
     for model_index in model_indexes:
         if model_index not in protein.models:
             raise ValueError(f"Model {model_index} not found in the protein")
@@ -171,25 +125,25 @@ def sadic(
         print(f"Computing depth indexes for model {model_index}".ljust(30, "."), end="", flush=True)
         filtered_model: Model = (
             protein.models[model_index]
-            if filter_arg is None
-            else protein.models[model_index].filter(filter_arg)
+            if filter_by is None
+            else protein.models[model_index].filter(filter_by)
         )
-        results.append(
-            SadicModelResult(
-                protein.models[model_index].atom_indexes,
-                representation_options[representation]["depth_index_function"](
-                    solid, filtered_model, probe_radius
-                )[0],
-            )
+        results[model_index] = SadicModelResult(
+            protein.models[model_index].atom_indexes,
+            representation_options[representation]["depth_index_function"](
+                solid, filtered_model, probe_radius
+            )[0],
+            protein.models[model_index],
+            filtered_model,
         )
         print("DONE")
 
     sadic_args: dict[str, Any] = {
         "representation": representation,
         "probe_radius": original_probe_radius,
-        "filter": filter_arg,
+        "filter": filter_by,
         "vdw_radii": vdw_radii,
         "model_indexes": original_model_indexes,
     }
 
-    return SadicEntityResult(results, sadic_args)
+    return SadicEntityResult(results, sadic_args, protein)

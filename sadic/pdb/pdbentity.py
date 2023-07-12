@@ -10,7 +10,6 @@ from Bio.PDB.Structure import Structure
 import numpy as np
 from numpy.typing import NDArray
 
-from sadic.solid import Sphere
 from sadic.utils import Repr
 
 
@@ -119,47 +118,66 @@ class Model(Repr):
 
     def filter_(
         self,
-        filter_arg: dict[str, str | int | Sequence[str] | Sequence[int]]
-        | Sphere
-        | NDArray[np.float32],
+        filter_by: dict[str, str | int | Sequence[str] | Sequence[int]]
+        | NDArray[np.float32]
+        | tuple[NDArray[np.float32], float],
     ) -> None:
         r"""Filters the Model object inplace, based on the filter given in input.
 
         Args:
-            filter_arg (None | dict[str, str | int | Sequence[str] | Sequence[int]] | Sphere
-            | NDArray[np.float32]):
-                The filter to apply to the atoms of the protein. If a dictionary, the keys are the
-                columns of the PDB file and the values are the values to select. If a Sphere, only
-                the atoms inside the sphere are considered. If a numpy array, it must be an array
-                with shape (n_points, 3) containing the coordinates of the points to be selected (
-                they could not be atom coordinates).
+            filter_by (None | dict[str, str | int | Sequence[str] | Sequence[int]]
+            | tuple[NDArray[np.float32], float] | NDArray[np.float32]):
+                The filter to apply to the atoms of the protein. If None, no filter is applied. If a
+                tuple of a np.ndarray and a float, they are assumed to represent the center and
+                radius of a sphere and only the atoms inside the sphere are considered. If a numpy
+                array, it must be an array with shape (n_points, 3) containing the coordinates of
+                the points to be selected. If a dictionary, the keys are the columns of the PDB file
+                and the values are the values to select. The keys can be one of the following:
+                "atom_number", "atom_name", "residue_name", "residue_number", "chain_id",
+                "element_symbol". The values can be a single value or a list of values. Defaults to
+                None.
         """
         if self.model is None:
             raise ValueError("No model to filter")
 
-        if isinstance(filter_arg, np.ndarray):
-            if filter_arg.ndim != 2 or filter_arg.shape[1] != 3:
+        if isinstance(filter_by, np.ndarray):
+            if filter_by.ndim != 2 or filter_by.shape[1] != 3:
                 raise ValueError(
                     "The array given in input must be a valid array of coordinates with shape "
                     "(n_points, 3)."
                 )
-            self.atom_indexes = np.arange(filter_arg.shape[0], dtype=np.int32)
-            self.atom_types = np.full(filter_arg.shape[0], "C")
-            self.atoms = filter_arg
+            self.atom_indexes = np.arange(filter_by.shape[0], dtype=np.int32)
+            self.atom_types = np.full(filter_by.shape[0], "X", dtype=np.string_)
+            self.atoms = filter_by
 
             return
 
-        if isinstance(filter_arg, dict):
-            for column, value in filter_arg.items():
+        if isinstance(filter_by, dict):
+            for column, value in filter_by.items():
                 values = value if isinstance(value, Sequence) else [value]
                 self.model.df["ATOM"] = self.model.df["ATOM"][
                     self.model.df["ATOM"][column].isin(values)
                 ]
-        elif isinstance(filter_arg, Sphere):
-            self.model.df["ATOM"] = self.model.df["ATOM"][
-                filter_arg.is_inside(
-                    self.model.df["ATOM"][["x_coord", "y_coord", "z_coord"]].to_numpy()
+        elif isinstance(filter_by, tuple):
+            if len(filter_by) != 2:
+                raise ValueError(
+                    "The tuple given in input must contain the center and radius of the sphere."
                 )
+            center, radius = filter_by
+            if not isinstance(center, np.ndarray) or center.ndim != 1 or center.shape[0] != 3:
+                raise ValueError(
+                    "The center of the sphere must be a valid array of coordinates with shape "
+                    "(3,)."
+                )
+            if not isinstance(radius, float):
+                raise ValueError("The radius of the sphere must be a valid float.")
+
+            self.model.df["ATOM"] = self.model.df["ATOM"][
+                np.linalg.norm(
+                    self.model.df["ATOM"][["x_coord", "y_coord", "z_coord"]].to_numpy() - center,
+                    axis=1,
+                )
+                <= radius
             ]
 
         self.atom_indexes = self.model.df["ATOM"]["atom_number"].to_numpy()
@@ -169,19 +187,23 @@ class Model(Repr):
     def filter(
         self,
         filter_arg: dict[str, str | int | Sequence[str] | Sequence[int]]
-        | Sphere
+        | tuple[NDArray[np.float32], float]
         | NDArray[np.float32],
     ) -> Model:
         r"""Filters the Model object, based on the filter given in input.
 
         Args:
-            filter_arg (None | dict[str, str | int | Sequence[str] | Sequence[int]] | Sphere
-            | NDArray[np.float32]):
-                The filter to apply to the atoms of the protein. If a dictionary, the keys are the
-                columns of the PDB file and the values are the values to select. If a Sphere, only
-                the atoms inside the sphere are considered. If a numpy array, it must be an array
-                with shape (n_points, 3) containing the coordinates of the points to be selected (
-                they could not be atom coordinates).
+            filter_by (None | dict[str, str | int | Sequence[str] | Sequence[int]]
+            | tuple[NDArray[np.float32], float] | NDArray[np.float32]):
+                The filter to apply to the atoms of the protein. If None, no filter is applied. If a
+                tuple of a np.ndarray and a float, they are assumed to represent the center and
+                radius of a sphere and only the atoms inside the sphere are considered. If a numpy
+                array, it must be an array with shape (n_points, 3) containing the coordinates of
+                the points to be selected. If a dictionary, the keys are the columns of the PDB file
+                and the values are the values to select. The keys can be one of the following:
+                "atom_number", "atom_name", "residue_name", "residue_number", "chain_id",
+                "element_symbol". The values can be a single value or a list of values. Defaults to
+                None.
 
         Returns (Model):
             The filtered Model object.
@@ -442,19 +464,31 @@ class PDBEntity(Repr):
         """
         raise NotImplementedError
 
-    def build_from_pdb_file(self, arg: str, max_nmodels: int = 1000) -> None:
+    def build_from_pdb_file(self, path: str, max_nmodels: int = 1000) -> None:
         r"""Builds the PDBEntity object based on the plain pdb file (.pdb) given in input.
 
-        To be implemented.
+        Args:
+            path (str):
+                The path to a pdb file to be used to build the PDBEntity object.
         """
-        raise NotImplementedError
+        if not path.endswith(".pdb"):
+            raise ValueError("path must be a string representing the path of a pdb file.")
 
-    def build_from_gzpdb_file(self, arg: str, max_nmodels: int = 1000) -> None:
+        self.entity: PandasPdb = pd().read_pdb(path)
+        self.complete_build_from_entity(max_nmodels)
+
+    def build_from_gzpdb_file(self, path: str, max_nmodels: int = 1000) -> None:
         r"""Builds the PDBEntity object based on the gzipped pdb file (.gz) given in input.
 
-        To be implemented.
+        Args:
+            path (str):
+                The path to a gzipped pdb file to be used to build the PDBEntity object.
         """
-        raise NotImplementedError
+        if not path.endswith(".pdb.gz"):
+            raise ValueError("path must be a string representing the path of a pdb file.")
+
+        self.entity: PandasPdb = pd().read_pdb(path)
+        self.complete_build_from_entity(max_nmodels)
 
     def build_from_url(self, url: str, max_nmodels: int = 1000) -> None:
         r"""Builds the PDBEntity object based on the url to a pdb structure page given in input.
@@ -519,3 +553,55 @@ class PDBEntity(Repr):
             atom_indexes.append(model.get_atom_indexes())
 
         return len(np.unique(np.concatenate(atom_indexes)))
+
+    def filter_(
+        self,
+        filter_by: dict[str, str | int | Sequence[str] | Sequence[int]]
+        | tuple[NDArray[np.float32], float]
+        | NDArray[np.float32],
+    ) -> None:
+        r"""Filters the Models of the PDBEntity object inplace, based on the filter given in input.
+
+        Args:
+            filter_by (None | dict[str, str | int | Sequence[str] | Sequence[int]]
+            | tuple[NDArray[np.float32], float] | NDArray[np.float32]):
+                The filter to apply to the atoms of the protein. If None, no filter is applied. If a
+                tuple of a np.ndarray and a float, they are assumed to represent the center and
+                radius of a sphere and only the atoms inside the sphere are considered. If a numpy
+                array, it must be an array with shape (n_points, 3) containing the coordinates of
+                the points to be selected. If a dictionary, the keys are the columns of the PDB file
+                and the values are the values to select. The keys can be one of the following:
+                "atom_number", "atom_name", "residue_name", "residue_number", "chain_id",
+                "element_symbol". The values can be a single value or a list of values. Defaults to
+                None.
+        """
+        for model in self.models.values():
+            model.filter_(filter_by)
+
+    def filter(
+        self,
+        filter_arg: dict[str, str | int | Sequence[str] | Sequence[int]]
+        | tuple[NDArray[np.float32], float]
+        | NDArray[np.float32],
+    ) -> PDBEntity:
+        r"""Filters the Models of the PDBEntity object, based on the filter given in input.
+
+        Args:
+            filter_by (None | dict[str, str | int | Sequence[str] | Sequence[int]]
+            | tuple[NDArray[np.float32], float] | NDArray[np.float32]):
+                The filter to apply to the atoms of the protein. If None, no filter is applied. If a
+                tuple of a np.ndarray and a float, they are assumed to represent the center and
+                radius of a sphere and only the atoms inside the sphere are considered. If a numpy
+                array, it must be an array with shape (n_points, 3) containing the coordinates of
+                the points to be selected. If a dictionary, the keys are the columns of the PDB file
+                and the values are the values to select. The keys can be one of the following:
+                "atom_number", "atom_name", "residue_name", "residue_number", "chain_id",
+                "element_symbol". The values can be a single value or a list of values. Defaults to
+                None.
+
+        Returns (Entity):
+            The filtered PDBEntity object.
+        """
+        entity = deepcopy(self)
+        entity.filter_(filter_arg)
+        return entity
