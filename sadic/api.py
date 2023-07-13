@@ -133,7 +133,6 @@ def sadic(
             representation_options[representation]["depth_index_function"](
                 solid, filtered_model, probe_radius
             )[0],
-            protein.models[model_index],
             filtered_model,
         )
         print("DONE")

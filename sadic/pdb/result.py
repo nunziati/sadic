@@ -406,20 +406,15 @@ class SadicEntityResult(Repr):
 
         if model_aggregation_list:
             concatenate_aggregation = (
-                output
+                output["concatenate"]
                 if "concatenate" in output
                 else self.get_depth_index(get_index=True, model_aggregation="concatenate")
             )
 
-            if not isinstance(concatenate_aggregation, dict) or not all(
-                isinstance(key, str) for key in concatenate_aggregation.keys()
-            ):
+            if not isinstance(concatenate_aggregation, tuple):
                 raise ValueError(
-                    "The output of the concatenate aggregation function must be a dictionary with "
-                    "string keys."
+                    "The output of the concatenate aggregation function must be a tuple"
                 )
-
-            concatenate_aggregation = concatenate_aggregation["concatenate"]
 
             for aggregation in model_aggregation_list:
                 output_models[aggregation] = self.aggregate_models(
@@ -571,7 +566,7 @@ class SadicEntityResult(Repr):
             model_index: int
             model_result: SadicModelResult
             for model_index, model_result in self.result_list.items():
-                output = {model_index: model_result.get_depth_index(get_index=True)}
+                list_output[model_index] = model_result.get_depth_index(get_index=True)
 
             return list_output
 
@@ -590,7 +585,7 @@ class SadicEntityResult(Repr):
                 atom_index: array_index for array_index, atom_index in enumerate(atom_indexes)
             }
 
-            model_indexes = np.array(list_aggregation.keys(), dtype=np.int32)
+            model_indexes = np.array(list(list_aggregation.keys()), dtype=np.int32)
 
             concatenate_output: tuple[NDArray[np.int32], NDArray[np.int32], NDArray[np.float32]]
 
@@ -627,7 +622,7 @@ class SadicEntityResult(Repr):
             "std": np.nanstd,
         }
 
-        model: Model = self.result_list[0].model
+        model: Model = self.result_list[min(self.result_list.keys())].model
         if model.model is None:
             raise ValueError("The model is not valid.")
 
@@ -636,9 +631,9 @@ class SadicEntityResult(Repr):
             current_model = model_result.model.model
             if current_model is None:
                 raise ValueError("The model is not valid.")
-            atoms.append(current_model.df["ATOMS"])
+            atoms.append(current_model.df["ATOM"])
 
-        model.model.df["ATOMS"] = (
+        model.model.df["ATOM"] = (
             pd.concat(atoms).drop_duplicates("atom_number").sort_values("atom_number")
         )
 
@@ -654,7 +649,7 @@ class SadicEntityResult(Repr):
         self,
         model_aggregation: str = "mean",
         list_aggregation: None | dict = None,
-        concatenate_aggregation: None | dict = None,
+        concatenate_aggregation=None,
     ):
         model_result = self.aggregate_models_(
             model_aggregation, list_aggregation, concatenate_aggregation

@@ -229,10 +229,18 @@ class PDBEntity(Repr):
 
 
     Class Attributes:
+        vdw_radii_1939 (dict[str, float]):
+            The Van Der Waals radii of the atoms that are present in proteins, as defined in the
+            1939 paper by Pauling.
+        vdw_radii_1964 (dict[str, float]):
+            The Van Der Waals radii of the atoms that are present in proteins, as defined in the
+            1964 paper by Bondi.
+        vdw_radii_1996 (dict[str, float]):
+            The Van Der Waals radii of the atoms that are present in proteins, as defined in the
+            1996 paper by Rowland.
         vdw_radii_2004 (dict[str, float]):
-            The Van Der Waals radii of the atoms that are present in proteins, updated in 2004.
-        vdw_radii_2023 (dict[str, float]):
-            The Van Der Waals radii of the atoms that are present in proteins, updated in 2023.
+            The Van Der Waals radii of the atoms that are present in proteins, as defined in the
+            2004 sadic version (they are the same as the 1964 ones).
         vdw_radii (dict[str, float]):
             The Van Der Waals radii of the atoms that are present in proteins, to be used by
             default.
@@ -268,8 +276,10 @@ class PDBEntity(Repr):
     _pdb_code_regex: str = r"[1-9][a-zA-Z0-9]{3}"
     _pdb_url_regex: str = r"(http[s]?://)?www.rcsb.org/structure/" + _pdb_code_regex + r"[/]?"
 
-    vdw_radii_2004: dict[str, float] = {"C": 1.7, "N": 1.5, "O": 1.4, "S": 1.85}
-    vdw_radii_2023: dict[str, float] = {"C": 1.7, "N": 1.55, "O": 1.52, "S": 1.8}
+    vdw_radii_1938: dict[str, float] = {"H": 1.2, "C": 1.7, "N": 1.5, "O": 1.4, "S": 1.85}
+    vdw_radii_1964: dict[str, float] = {"H": 1.2, "C": 1.7, "N": 1.55, "O": 1.52, "S": 1.8}
+    vdw_radii_1996: dict[str, float] = {"H": 1.1, "C": 1.77, "N": 1.64, "O": 1.58, "S": 1.81}
+    vdw_radii_2004: dict[str, float] = vdw_radii_1938
     vdw_radii: dict[str, float] = vdw_radii_2004
 
     def __init__(
