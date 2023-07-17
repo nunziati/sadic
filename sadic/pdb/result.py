@@ -535,9 +535,9 @@ class SadicEntityResult(Repr):
 
         with open(path, "w", encoding="utf-8") as file:
             if file_format == "sadicv1":
-                file.write(f"di\t{float(self.sadic_args['probe_radius']): .3f}")
+                file.write("di\t####")
                 for atom_index, depth_index in zip(depth_indexes[0], depth_indexes[1]):
-                    file.write(f"\n{atom_index}\t{depth_index: .3f}")
+                    file.write(f"\n{atom_index}\t{depth_index:.3f}")
 
     def summary(self) -> tuple[NDArray[np.int32], NDArray[np.float32], NDArray[np.float32]]:
         r"""Return a summary of the result object.
