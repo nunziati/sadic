@@ -468,6 +468,8 @@ def sadic_original_voxel(
     idx: int
     center: NDArray[np.float32]
     for idx, center in enumerate(centers):
+        if idx == 154:
+            print("lol")
         sphere: VoxelSolid = VoxelSolid(
             [Sphere(center, probe_radius)],
             resolution=protein_solid.resolution,

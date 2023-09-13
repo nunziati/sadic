@@ -87,7 +87,7 @@ class VoxelSolid(Solid):
         self,
         arg1: (Sequence[Sphere] | Model | Structure | NDArray[np.float32]),
         arg2: None | NDArray[np.float32] = None,
-        resolution: float = 0.3,
+        resolution: float = 0.5,
         extreme_coordinates: None | NDArray[np.float32] = None,
         align_with: None | VoxelSolid = None,
     ) -> None:
@@ -480,6 +480,7 @@ class VoxelSolid(Solid):
         self,
         operator: Callable[[NDArray[np.bool_], NDArray[np.bool_]], NDArray[np.bool_]],
         other: VoxelSolid,
+        default = None
     ) -> None:
         r"""Applies a function that operates on the intersection of two voxel solids inplace.
 
@@ -498,12 +499,16 @@ class VoxelSolid(Solid):
             self_intersection_extremes: NDArray[np.int32],
             other_intersection_extremes: NDArray[np.int32],
         ) -> None:
+            grid_copy: NDArray[np.bool_] = np.array([])
+            if default is not None:
+                grid_copy = self.grid.copy()
+                self.grid[:, :, :] = default
             self.grid[
                 self_intersection_extremes[0, 0] : self_intersection_extremes[0, 1],
                 self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],
                 self_intersection_extremes[2, 0] : self_intersection_extremes[2, 1],
             ] = operator(
-                self.grid[
+                (grid_copy if default is not None else self.grid)[
                     self_intersection_extremes[0, 0] : self_intersection_extremes[0, 1],
                     self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],
                     self_intersection_extremes[2, 0] : self_intersection_extremes[2, 1],
@@ -524,7 +529,7 @@ class VoxelSolid(Solid):
             other (VoxelSolid):
                 The other solid.
         """
-        self.local_operator(np.logical_and, other)
+        self.local_operator(np.logical_and, other, default=False)
 
     def intersection(self, other: VoxelSolid) -> VoxelSolid:
         r"""Finds the intersection of two voxel solids and returns it as a new solid.
