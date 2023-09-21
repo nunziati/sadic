@@ -87,7 +87,7 @@ class VoxelSolid(Solid):
         self,
         arg1: (Sequence[Sphere] | Model | Structure | NDArray[np.float32]),
         arg2: None | NDArray[np.float32] = None,
-        resolution: float = 0.5,
+        resolution: float = 0.3,
         extreme_coordinates: None | NDArray[np.float32] = None,
         align_with: None | VoxelSolid = None,
     ) -> None:
@@ -184,7 +184,7 @@ class VoxelSolid(Solid):
         self.dimensions = np.ceil(
             (self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0]) / self.resolution
         ).astype(np.int32)
-        self.grid = np.empty(self.dimensions, dtype=np.bool_)
+        self.grid = np.full(self.dimensions, False, dtype=np.bool_)
 
         if len(self.multisphere) == 1:
             self.grid = multisphere.is_inside(
