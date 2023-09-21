@@ -38,6 +38,7 @@ def sadic(
     probe_radius: None | int | float = None,
     vdw_radii: None | dict[str, float] = None,
     representation: str = "voxel",
+    resolution: None | float = None,
 ) -> SadicEntityResult:
     r"""Compute the SADIC depth index of a protein.
 
@@ -76,6 +77,12 @@ def sadic(
     if representation not in representation_options:
         raise ValueError("Representation must be 'multisphere' or 'voxel'")
 
+    if representation == "voxel" and resolution is None:
+        resolution = 0.3
+    
+    if resolution is not None and resolution <= 0:
+        raise ValueError("Resolution must be positive")
+    
     print("Loading protein".ljust(30, "."), end="", flush=True)
     protein = PDBEntity(input_arg, vdw_radii=vdw_radii)
     print("DONE")
@@ -110,7 +117,7 @@ def sadic(
 
         print("Creating solid".ljust(30, "."), end="", flush=True)
         solid: Solid = representation_options[representation]["solid_type"](
-            protein.models[model_index]
+            protein.models[model_index], resolution=resolution
         ).remove_holes()
         print("DONE")
 
