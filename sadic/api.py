@@ -111,7 +111,7 @@ def sadic(
         print("Creating solid".ljust(30, "."), end="", flush=True)
         solid: Solid = representation_options[representation]["solid_type"](
             protein.models[model_index]
-        )
+        ).remove_holes()
         print("DONE")
 
         if not fixed_probe_radius:
