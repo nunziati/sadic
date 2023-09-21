@@ -52,6 +52,9 @@ def find_candidate_max_radius_points(
         surface of the multisphere.
     """
     min_radius = min_radius if min_radius is not None else multisphere.get_all_radii().min()
+    if min_radius is None:
+        raise ValueError("The multisphere must contain at least one sphere.")
+    
     max_radius: float = min_radius
 
     centers: NDArray[np.float32] = multisphere.get_all_centers()
