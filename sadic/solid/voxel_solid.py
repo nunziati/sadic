@@ -164,10 +164,10 @@ class VoxelSolid(Solid):
             self.extreme_coordinates = multisphere.get_extreme_coordinates()
             self.extreme_coordinates[:, 1] += (
                 self.resolution
-                * np.modf(
+                * (1 - np.modf(
                     (self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0])
                     / self.resolution
-                )[0]
+                )[0])
             )
             if align_with is not None:
                 if self.resolution != align_with.resolution:
@@ -441,7 +441,7 @@ class VoxelSolid(Solid):
         displacement: NDArray[np.float32] = (
             self.extreme_coordinates - other.extreme_coordinates
         ) / self.resolution
-        if np.any(np.round(displacement - np.round(displacement, decimals=2), decimals=2)):
+        if np.any(np.round(displacement - np.round(displacement), decimals=4)):
             raise ValueError("Grids must be aligned")
 
         min_intersection_centers: NDArray[np.float32] = (

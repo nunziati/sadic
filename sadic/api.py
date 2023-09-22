@@ -38,7 +38,7 @@ def sadic(
     probe_radius: None | int | float = None,
     vdw_radii: None | dict[str, float] = None,
     representation: str = "voxel",
-    resolution: None | float = None,
+    resolution: None | float | str = None,
 ) -> SadicEntityResult:
     r"""Compute the SADIC depth index of a protein.
 
@@ -70,6 +70,12 @@ def sadic(
             used. Defaults to None.
         representation (str):
             Representation of the protein. Can be "multisphere" or "voxel". Defaults to "voxel".
+        resolution (None | float | str):
+            Resolution of the voxel representation of the protein. If None, the resolution is
+            set to 0.3 Angstrom. If float, the resolution is set to the value of the parameter. If
+            str, it must be equal to 'old' and the resolution is set to 1.0 Angstrom, that is an
+            equivalent resolution to the one used in the original SADIC implementation. Defaults to
+            None.
 
     Returns (SadicEntityResult):
         The SADIC depth index of the atoms of the protein.
@@ -77,11 +83,17 @@ def sadic(
     if representation not in representation_options:
         raise ValueError("Representation must be 'multisphere' or 'voxel'")
 
-    if representation == "voxel" and resolution is None:
-        resolution = 0.3
+    if representation == "voxel":
+        if resolution is None:
+            resolution = 0.3
     
-    if resolution is not None and resolution <= 0:
-        raise ValueError("Resolution must be positive")
+        if resolution is not None and isinstance(resolution, float) and resolution <= 0:
+            raise ValueError("Resolution must be positive")
+        
+        if resolution is not None and isinstance(resolution, str)
+            if resolution != "old":
+                raise ValueError("Resolution must be 'old' or positive float")
+            resolution = 1.0
     
     print("Loading protein".ljust(30, "."), end="", flush=True)
     protein = PDBEntity(input_arg, vdw_radii=vdw_radii)
