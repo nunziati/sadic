@@ -90,7 +90,7 @@ def sadic(
         if resolution is not None and isinstance(resolution, float) and resolution <= 0:
             raise ValueError("Resolution must be positive")
         
-        if resolution is not None and isinstance(resolution, str)
+        if resolution is not None and isinstance(resolution, str):
             if resolution != "old":
                 raise ValueError("Resolution must be 'old' or positive float")
             resolution = 1.0
