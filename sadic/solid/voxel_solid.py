@@ -441,7 +441,7 @@ class VoxelSolid(Solid):
         displacement: NDArray[np.float32] = (
             self.extreme_coordinates - other.extreme_coordinates
         ) / self.resolution
-        if np.any(np.round(displacement - np.round(displacement), decimals=4)):
+        if np.any(np.round(displacement - np.round(displacement), decimals=3)):
             raise ValueError("Grids must be aligned")
 
         min_intersection_centers: NDArray[np.float32] = (
