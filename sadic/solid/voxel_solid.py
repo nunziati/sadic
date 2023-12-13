@@ -164,10 +164,10 @@ class VoxelSolid(Solid):
             self.extreme_coordinates = multisphere.get_extreme_coordinates()
             self.extreme_coordinates[:, 1] += (
                 self.resolution
-                * np.modf(
+                * (1 - np.modf(
                     (self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0])
                     / self.resolution
-                )[0]
+                )[0])
             )
             if align_with is not None:
                 if self.resolution != align_with.resolution:
@@ -184,7 +184,7 @@ class VoxelSolid(Solid):
         self.dimensions = np.ceil(
             (self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0]) / self.resolution
         ).astype(np.int32)
-        self.grid = np.empty(self.dimensions, dtype=np.bool_)
+        self.grid = np.full(self.dimensions, False, dtype=np.bool_)
 
         if len(self.multisphere) == 1:
             self.grid = multisphere.is_inside(
@@ -275,14 +275,18 @@ class VoxelSolid(Solid):
         new_voxel_solid.remove_holes_(*args, **kwargs)
         return new_voxel_solid
 
-    def edt(self) -> NDArray[np.float32]:
+    def edt(self, sampling: None | float = None) -> NDArray[np.float32]:
         r"""Computes the euclidean distance transform of the solid.
 
         Returns (NDArray[np.float32]):
             An array of the same shape as the grid, containing the euclidean distance transform of
             the solid.
         """
-        return distance_transform_edt(self.grid, sampling=self.resolution)
+
+        if sampling is None:
+            sampling = self.resolution
+            
+        return distance_transform_edt(self.grid, sampling=sampling)
 
     def translate(self, shift: NDArray[np.int32]) -> VoxelSolid:
         r"""Translates the solid by the given shift in the grid space and returns a new solid.
@@ -441,7 +445,7 @@ class VoxelSolid(Solid):
         displacement: NDArray[np.float32] = (
             self.extreme_coordinates - other.extreme_coordinates
         ) / self.resolution
-        if np.any(np.round(displacement - np.round(displacement, decimals=2), decimals=2)):
+        if np.any(np.round(displacement - np.round(displacement, decimals=2), decimals=2)[:, 0]):
             raise ValueError("Grids must be aligned")
 
         min_intersection_centers: NDArray[np.float32] = (
@@ -480,6 +484,7 @@ class VoxelSolid(Solid):
         self,
         operator: Callable[[NDArray[np.bool_], NDArray[np.bool_]], NDArray[np.bool_]],
         other: VoxelSolid,
+        default = None,
     ) -> None:
         r"""Applies a function that operates on the intersection of two voxel solids inplace.
 
@@ -498,12 +503,16 @@ class VoxelSolid(Solid):
             self_intersection_extremes: NDArray[np.int32],
             other_intersection_extremes: NDArray[np.int32],
         ) -> None:
+            grid_copy: NDArray[np.bool_] = np.array([])
+            if default is not None:
+                grid_copy = self.grid.copy()
+                self.grid[:, :, :] = default
             self.grid[
                 self_intersection_extremes[0, 0] : self_intersection_extremes[0, 1],
                 self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],
                 self_intersection_extremes[2, 0] : self_intersection_extremes[2, 1],
             ] = operator(
-                self.grid[
+                (grid_copy if default is not None else self.grid)[
                     self_intersection_extremes[0, 0] : self_intersection_extremes[0, 1],
                     self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],
                     self_intersection_extremes[2, 0] : self_intersection_extremes[2, 1],
@@ -524,7 +533,7 @@ class VoxelSolid(Solid):
             other (VoxelSolid):
                 The other solid.
         """
-        self.local_operator(np.logical_and, other)
+        self.local_operator(np.logical_and, other, default=False)
 
     def intersection(self, other: VoxelSolid) -> VoxelSolid:
         r"""Finds the intersection of two voxel solids and returns it as a new solid.

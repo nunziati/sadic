@@ -1,6 +1,7 @@
 r"""API functions for execution of sadic algorithm on a protein."""
 
 from typing import Any, Sequence
+import time
 
 import numpy as np
 from numpy.typing import NDArray
@@ -38,6 +39,8 @@ def sadic(
     probe_radius: None | int | float = None,
     vdw_radii: None | dict[str, float] = None,
     representation: str = "voxel",
+    resolution: float = 0.3,
+    debug: bool = False,
 ) -> SadicEntityResult:
     r"""Compute the SADIC depth index of a protein.
 
@@ -69,9 +72,12 @@ def sadic(
             used. Defaults to None.
         representation (str):
             Representation of the protein. Can be "multisphere" or "voxel". Defaults to "voxel".
+        debug (bool):
+            If True, the algorithm prints and returns debug information. Defaults to False.
 
     Returns (SadicEntityResult):
-        The SADIC depth index of the atoms of the protein.
+        The SADIC depth index of the atoms of the protein. If debug is True, it also returns debug
+        information in the form of a dictionary containing the grid_shape.
     """
     if representation not in representation_options:
         raise ValueError("Representation must be 'multisphere' or 'voxel'")
@@ -79,6 +85,8 @@ def sadic(
     print("Loading protein".ljust(30, "."), end="", flush=True)
     protein = PDBEntity(input_arg, vdw_radii=vdw_radii)
     print("DONE")
+
+    start_time = time.time()
 
     # retrieve probe_radius
     original_probe_radius: None | float | int = probe_radius
@@ -91,7 +99,7 @@ def sadic(
             if probe_radius not in protein.models:
                 raise ValueError(f"Model {probe_radius} not found in the protein")
 
-            solid: Solid = representation_options[representation]["solid_type"](protein)
+            solid: Solid = representation_options[representation]["solid_type"](protein, resolution=resolution)
             probe_radius = representation_options[representation]["probe_radius_function"](solid)[1]
             fixed_probe_radius = True
 
@@ -110,8 +118,9 @@ def sadic(
 
         print("Creating solid".ljust(30, "."), end="", flush=True)
         solid: Solid = representation_options[representation]["solid_type"](
-            protein.models[model_index]
+            protein.models[model_index], resolution=resolution
         )
+        _ = representation_options[representation]["probe_radius_function"](solid)[1]
         print("DONE")
 
         if not fixed_probe_radius:
@@ -144,5 +153,16 @@ def sadic(
         "vdw_radii": vdw_radii,
         "model_indexes": original_model_indexes,
     }
+
+    if debug:
+        debug_dict = {
+            "grid_shape": solid.dimensions,
+            "execution_time": time.time() - start_time,
+        }
+
+        print("Debug info")
+        print(debug_dict)
+
+        return SadicEntityResult(results, sadic_args, protein), debug_dict
 
     return SadicEntityResult(results, sadic_args, protein)
