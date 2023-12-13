@@ -165,10 +165,8 @@ class VoxelSolid(Solid):
             self.extreme_coordinates[:, 1] += (
                 self.resolution
                 * (1 - np.modf(
-                * (1 - np.modf(
                     (self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0])
                     / self.resolution
-                )[0])
                 )[0])
             )
             if align_with is not None:
@@ -518,7 +516,6 @@ class VoxelSolid(Solid):
                 self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],
                 self_intersection_extremes[2, 0] : self_intersection_extremes[2, 1],
             ] = operator(
-                (grid_copy if default is not None else self.grid)[
                 (grid_copy if default is not None else self.grid)[
                     self_intersection_extremes[0, 0] : self_intersection_extremes[0, 1],
                     self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],

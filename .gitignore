@@ -1,0 +1,3 @@
+my_tests/
+*.egg-info
+__pycache__
