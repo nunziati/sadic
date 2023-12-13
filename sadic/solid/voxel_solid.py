@@ -165,8 +165,10 @@ class VoxelSolid(Solid):
             self.extreme_coordinates[:, 1] += (
                 self.resolution
                 * (1 - np.modf(
+                * (1 - np.modf(
                     (self.extreme_coordinates[:, 1] - self.extreme_coordinates[:, 0])
                     / self.resolution
+                )[0])
                 )[0])
             )
             if align_with is not None:
@@ -507,11 +509,16 @@ class VoxelSolid(Solid):
             if default is not None:
                 grid_copy = self.grid.copy()
                 self.grid[:, :, :] = default
+            grid_copy: NDArray[np.bool_] = np.array([])
+            if default is not None:
+                grid_copy = self.grid.copy()
+                self.grid[:, :, :] = default
             self.grid[
                 self_intersection_extremes[0, 0] : self_intersection_extremes[0, 1],
                 self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],
                 self_intersection_extremes[2, 0] : self_intersection_extremes[2, 1],
             ] = operator(
+                (grid_copy if default is not None else self.grid)[
                 (grid_copy if default is not None else self.grid)[
                     self_intersection_extremes[0, 0] : self_intersection_extremes[0, 1],
                     self_intersection_extremes[1, 0] : self_intersection_extremes[1, 1],
@@ -533,6 +540,7 @@ class VoxelSolid(Solid):
             other (VoxelSolid):
                 The other solid.
         """
+        self.local_operator(np.logical_and, other, default=False)
         self.local_operator(np.logical_and, other, default=False)
 
     def intersection(self, other: VoxelSolid) -> VoxelSolid:

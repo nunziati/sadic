@@ -39,6 +39,7 @@ class Model(Repr):
                 The index of the model to be used to build the Model object.
         """
         self.model: PandasPdb | None = None
+        self.code: str
         self.atom_indexes: NDArray[np.int32]
         self.atom_types: NDArray[np.string_]
         self.atoms: NDArray[np.float32]
@@ -57,6 +58,7 @@ class Model(Repr):
                 The index of the model to be used to build the Model object.
         """
         self.model = pdb_entity.get_model(model_idx)
+        self.code = pdb_entity.code
         self.atom_indexes = self.model.df["ATOM"]["atom_number"].to_numpy()
         self.atom_types = self.model.df["ATOM"]["element_symbol"].to_numpy()
         self.atoms = self.model.df["ATOM"][["x_coord", "y_coord", "z_coord"]].to_numpy()
@@ -321,6 +323,7 @@ class PDBEntity(Repr):
         """
         self.nmodels: int
         self.entity: PandasPdb
+        self.code: str
         self.models: dict[int, Model] = {}
         self.last_probe_radius: float | None = None
 
@@ -443,6 +446,7 @@ class PDBEntity(Repr):
                 The maximum number of models to be loaded. It is a security measure to prevent
                 too long loops. Defaults to 1000.
         """
+        self.code = self.entity.df["OTHERS"]["entry"][0][-4:]
         for model_index in range(1, max_nmodels + 1):
             if self.entity.get_model(model_index).df["ATOM"].empty:
                 break

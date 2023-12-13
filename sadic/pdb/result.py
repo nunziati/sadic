@@ -3,6 +3,7 @@ r"""Result of the SADIC algorithm for a single model of a protein and for multip
 from __future__ import annotations
 from typing import Any, Sequence
 from copy import deepcopy
+import os
 
 import pandas as pd
 import numpy as np
@@ -122,7 +123,7 @@ class SadicModelResult(Repr):
         | tuple[NDArray[np.float32], float]
         | NDArray[np.float32] = None,
     ) -> None:
-        r"""Filter (inplace) the entity inside the result object according to the filter_by argument.
+        r"""Filter (inplace) the entity inside the result object.
 
         Args:
             filter_by (None | dict[str, str | int | Sequence[str] | Sequence[int]]
@@ -434,6 +435,119 @@ class SadicEntityResult(Repr):
 
         return output
 
+    def save_pdb(
+        self,
+        path: None | str = None,
+        replaced_column: None | str = "b_factor",
+        model_aggregation: str = "mean",
+        gzip: bool = False,
+        append_newline: bool = True,
+    ) -> None:
+        r"""Save the entity of the protein as a PDB file.
+
+        Args:
+            path (None | str):
+                The path where to save the PDB file. If None, the file is saved in the current
+                directory with the name <protein_code>_sadic.pdb. Defaults to None.
+            replaced_column (None | str):
+                The column of the PDB file to replace with the depth index. Can be one of the
+                following: "atom_number", "atom_name", "residue_name", "residue_number", "chain_id",
+                "element_symbol", None. If None, a new column is created. Defaults to "b_factor".
+            model_aggregation (str):
+                The aggregation function to apply to the depth indexes of the corresponding atoms
+                of different models. Can be one of the following: "mean", "median", "min", "max",
+                "var", "std". Defaults to "mean".
+            gzip (bool):
+                If True, the PDB file is saved in gz format. Defaults to False.
+            append_newline (bool):
+                If True, a newline is appended at the end of the file. Defaults to True.
+        """
+        if model_aggregation in {"list", "concatenate"}:
+            raise ValueError(
+                f"The model_aggregation argument cannot be {model_aggregation}. "
+                f"Valid aggregation functions are: mean, median, min, max, var, std."
+            )
+
+        if path is None:
+            path = f"./{self.entity.code}_sadic.pdb"
+
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+
+        valid_columns = list(self.entity.entity.df["ATOM"].columns) + [None]
+        valid_columns.remove("atom_number")
+        valid_columns.remove("line_idx")
+        if replaced_column not in valid_columns:
+            raise ValueError(
+                f"The column {replaced_column} is not valid. Valid columns are: {valid_columns}."
+            )
+
+        pdb = deepcopy(self.result_list[min(self.result_list.keys())].model.model)
+        if pdb is None:
+            raise ValueError("The model is not valid.")
+
+        depth_indexes = self.get_depth_index(get_index=True, model_aggregation=model_aggregation)
+
+        pdb.df["ATOM"][replaced_column] = np.nan
+
+        for atom_index, depth_index in depth_indexes:
+            pdb.df["ATOM"].loc[
+                pdb.df["ATOM"]["atom_number"] == atom_index, replaced_column
+            ] = depth_index
+
+        pdb.to_pdb(path, gz=gzip, append_newline=append_newline)
+
+    def save_txt(
+        self, path: None | str = None, model_aggregation: str = "mean", file_format: str = "sadicv1"
+    ) -> None:
+        r"""Save the entity of the protein as a txt file.
+
+        Args:
+            path (None | str):
+                The path where to save the txt file. If None, the file is saved in the current
+                directory with the name <protein_code>_sadic.txt. Defaults to None.
+            model_aggregation (str):
+                The aggregation function to apply to the depth indexes of the corresponding atoms
+                of different models. Can be one of the following: "mean", "median", "min", "max",
+                "var", "std". Defaults to "mean".
+            file_format (str):
+                The format of the txt file. Can be one of the following: "sadicv1", ....
+                Defaults to "sadicv1".
+        """
+        if model_aggregation in {"list", "concatenate"}:
+            raise ValueError(
+                f"The model_aggregation argument cannot be {model_aggregation}. "
+                f"Valid aggregation functions are: mean, median, min, max, var, std."
+            )
+
+        if file_format not in {"sadicv1"}:
+            raise ValueError(
+                f"The format argument cannot be {format}. " f"Valid formats are: sadicv1."
+            )
+
+        if path is None:
+            path = f"./{self.entity.code}_sadic.txt"
+
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+
+        depth_indexes = self.get_depth_index(get_index=True, model_aggregation=model_aggregation)
+
+        with open(path, "w", encoding="utf-8") as file:
+            if file_format == "sadicv1":
+                file.write("di\t####")
+                for atom_index, depth_index in zip(depth_indexes[0], depth_indexes[1]):
+                    file.write(f"\n{atom_index}\t{depth_index:.3f}")
+
+    def summary(self) -> tuple[NDArray[np.int32], NDArray[np.float32], NDArray[np.float32]]:
+        r"""Return a summary of the result object.
+
+        It includes mean and standard deviation of the depth index of the atoms of the protein,
+        among the different models.
+        """
+        info = self.get_depth_index(get_index=True, model_aggregation=("mean", "std"))
+        return info["mean"][0], info["mean"][1], info["std"][1]
+
     def filter_(
         self,
         filter_by: None
@@ -441,7 +555,7 @@ class SadicEntityResult(Repr):
         | tuple[NDArray[np.float32], float]
         | NDArray[np.float32] = None,
     ) -> None:
-        r"""Filter (inplace) the entity inside the result object according to the filter_by argument.
+        r"""Filter (inplace) the entity inside the result object.
 
         Args:
             filter_by (None | dict[str, str | int | Sequence[str] | Sequence[int]]
@@ -539,12 +653,30 @@ class SadicEntityResult(Repr):
         copy_result.aggregate_atoms_(atom_aggregation)
         return copy_result
 
-    def aggregate_models_(
+    def aggregate_models(
         self,
         model_aggregation: str = "mean",
         list_aggregation: None | dict = None,
-        concatenate_aggregation: None | dict = None,
+        concatenate_aggregation=None,
     ):
+        r"""Aggregate the models of the entity and return a single summary model result.
+
+        Args:
+            model_aggregation (str):
+                The aggregation function to apply to the depth indexes of the corresponding atoms
+                of different models. Can be one of the following: "mean", "median", "min", "max",
+                "var", "std", "concatenate", "list". Defaults to "mean".
+            list_aggregation (None | dict):
+                The result of the list aggregation function. Should be present when using the
+                concatenate aggregation function. Defaults to None.
+            concatenate_aggregation (None | dict):
+                The result of the concatenate aggregation function. Should be present when using an
+                aggregation function other than list or concatenate. Defaults to None.
+
+        Returns:
+            The depth index of the atoms of the protein, aggregated according to the
+            model_aggregation and atom_aggregation argument.
+        """
         if model_aggregation not in {
             "mean",
             "median",
@@ -644,14 +776,3 @@ class SadicEntityResult(Repr):
         )
 
         return output_model_result
-
-    def aggregate_models(
-        self,
-        model_aggregation: str = "mean",
-        list_aggregation: None | dict = None,
-        concatenate_aggregation=None,
-    ):
-        model_result = self.aggregate_models_(
-            model_aggregation, list_aggregation, concatenate_aggregation
-        )
-        return model_result

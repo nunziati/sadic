@@ -72,6 +72,12 @@ def sadic(
             used. Defaults to None.
         representation (str):
             Representation of the protein. Can be "multisphere" or "voxel". Defaults to "voxel".
+        resolution (None | float | str):
+            Resolution of the voxel representation of the protein. If None, the resolution is
+            set to 0.3 Angstrom. If float, the resolution is set to the value of the parameter. If
+            str, it must be equal to 'old' and the resolution is set to 1.0 Angstrom, that is an
+            equivalent resolution to the one used in the original SADIC implementation. Defaults to
+            None.
         debug (bool):
             If True, the algorithm prints and returns debug information. Defaults to False.
 
@@ -82,6 +88,18 @@ def sadic(
     if representation not in representation_options:
         raise ValueError("Representation must be 'multisphere' or 'voxel'")
 
+    if representation == "voxel":
+        if resolution is None:
+            resolution = 0.3
+    
+        if resolution is not None and isinstance(resolution, float) and resolution <= 0:
+            raise ValueError("Resolution must be positive")
+        
+        if resolution is not None and isinstance(resolution, str):
+            if resolution != "old":
+                raise ValueError("Resolution must be 'old' or positive float")
+            resolution = 1.0
+    
     print("Loading protein".ljust(30, "."), end="", flush=True)
     protein = PDBEntity(input_arg, vdw_radii=vdw_radii)
     print("DONE")
@@ -119,8 +137,7 @@ def sadic(
         print("Creating solid".ljust(30, "."), end="", flush=True)
         solid: Solid = representation_options[representation]["solid_type"](
             protein.models[model_index], resolution=resolution
-        )
-        _ = representation_options[representation]["probe_radius_function"](solid)[1]
+        ).remove_holes()
         print("DONE")
 
         if not fixed_probe_radius:
