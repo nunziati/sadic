@@ -31,6 +31,7 @@ representation_options: dict[str, dict[str, Any]] = {
 
 def sadic(
     input_arg: str | PandasPdb | Structure,
+    input_mode: str = 'infer',
     model_indexes: None | Sequence[int] = None,
     filter_by: None
     | dict[str, str | int | Sequence[str] | Sequence[int]]
@@ -48,6 +49,9 @@ def sadic(
         arg (str | PandasPdb | Structure):
             The protein to compute the SADIC depth index of. Can be a path to a PDB file, a
             PandasPdb object or a BioPython Structure object.
+        input_mode (str, optional):
+            The mode to be used to build the PDBEntity object. Can be one of "biopandas",
+            "biopython", "pdb", "gz", "url", "code" or "infer". Defaults to "infer".
         model_indexes (None | Sequence[int]):
             The indexes of the models of the protein to compute the SADIC depth index of. If None,
             all the models are considered. Defaults to None.
