@@ -1,0 +1,19 @@
+biopandas==0.4.1
+biopython==1.81
+contourpy==1.2.0
+cycler==0.12.1
+fonttools==4.46.0
+kiwisolver==1.4.5
+matplotlib==3.8.2
+numpy==1.26.2
+packaging==23.2
+pandas==2.1.4
+Pillow==10.1.0
+pyparsing==3.1.1
+python-dateutil==2.8.2
+pytz==2023.3.post1
+-e git+https://github.com/nunziati/sadic.git@91f7206e4b50e92b5ed4c9bf84788fa9c59d065c#egg=sadic
+scipy==1.11.4
+six==1.16.0
+tqdm==4.66.1
+tzdata==2023.3
