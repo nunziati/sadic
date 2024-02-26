@@ -40,6 +40,10 @@ To only install the requirements you can use the following command:
 
 ## Usage
 
+### Command Line Interface (CLI)
+
+### Python interface
+
 ## Algorithm
 
 ## Citing

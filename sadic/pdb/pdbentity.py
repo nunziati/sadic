@@ -95,7 +95,7 @@ class Model(Repr):
             The radii of the atoms in the PDBEntity object, increased by the probe radius.
         """
         final_probe_radius: float = (
-            probe_radius if probe_radius is not None else min(PDBEntity.vdw_radii.values())
+            probe_radius if probe_radius is not None else PDBEntity.vdw_radii['O']
         )
 
         if self.radii is None or self.last_probe_radius != final_probe_radius:
@@ -334,7 +334,7 @@ class PDBEntity(Repr):
 
             for atom_type in vdw_radii:
                 if atom_type not in PDBEntity.vdw_radii:
-                    continue
+                    raise ValueError(f"Atom type {atom_type} not found in vdw_radii.")
 
                 if vdw_radii[atom_type] <= 0.0:
                     raise ValueError(

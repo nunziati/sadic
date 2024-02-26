@@ -40,7 +40,7 @@ def sadic(
     probe_radius: None | int | float = None,
     vdw_radii: None | dict[str, float] = None,
     representation: str = "voxel",
-    resolution: float = 0.3,
+    resolution: None | int | float = 0.3,
     debug: bool = False,
 ) -> SadicEntityResult:
     r"""Compute the SADIC depth index of a protein.
