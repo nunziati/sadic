@@ -471,7 +471,7 @@ class SadicEntityResult(Repr):
         if path is None:
             path = f"./{self.entity.code}_sadic.pdb"
 
-        if not os.path.exists(os.path.dirname(path)):
+        if os.path.dirname(path) != '' and not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
         valid_columns = list(self.entity.entity.df["ATOM"].columns) + [None]
@@ -490,7 +490,7 @@ class SadicEntityResult(Repr):
 
         pdb.df["ATOM"][replaced_column] = np.nan
 
-        for atom_index, depth_index in depth_indexes:
+        for atom_index, depth_index in zip(depth_indexes):
             pdb.df["ATOM"].loc[
                 pdb.df["ATOM"]["atom_number"] == atom_index, replaced_column
             ] = depth_index
