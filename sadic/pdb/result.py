@@ -490,7 +490,7 @@ class SadicEntityResult(Repr):
 
         pdb.df["ATOM"][replaced_column] = np.nan
 
-        for atom_index, depth_index in zip(depth_indexes):
+        for atom_index, depth_index in zip(depth_indexes[0].tolist(), depth_indexes[1].tolist()):
             pdb.df["ATOM"].loc[
                 pdb.df["ATOM"]["atom_number"] == atom_index, replaced_column
             ] = depth_index
