@@ -19,12 +19,16 @@ class Model(Repr):
     Attributes:
         atom_indexes (NDArray[np.int32]):
             The indexes of the atoms in the original pdb file.
+        
         atom_types (NDArray[np.string_]):
             The types of the atoms in the model.
+        
         atoms (NDArray[np.float32]):
             The coordinates of the atoms in the model.
+        
         last_probe_radius (float | None):
             The last probe radius used to calculate the radii of the atoms.
+        
         radii (NDArray[np.float32] | None):
             The Van Der Waals radii of the atoms in the model.
     """
@@ -35,6 +39,7 @@ class Model(Repr):
         Args:
             pdb_entity (PDBEntity):
                 The PDBEntity object containing the original pdb file.
+            
             model_idx (int):
                 The index of the model to be used to build the Model object.
         """
@@ -54,6 +59,7 @@ class Model(Repr):
         Args:
             pdb_entity (PDBEntity):
                 The PDBEntity object containing the original pdb file.
+            
             model_idx (int):
                 The index of the model to be used to build the Model object.
         """
@@ -221,11 +227,14 @@ class PDBEntity(Repr):
     Attributes:
         nmodels (int):
             The number of models in the PDBEntity object.
+        
         entity (PandasPdb):
             The biopandas.pdb.PandasPdb object representing the pdb structure.
+        
         models (dict[int, Model]):
             The list of models in the PDBEntity object. For consistency with the pdb notation, model
             indexes start from 1.
+        
         last_probe_radius (float | None):
             The last probe radius used to calculate the radii of the atoms.
 
@@ -234,15 +243,19 @@ class PDBEntity(Repr):
         vdw_radii_1939 (dict[str, float]):
             The Van Der Waals radii of the atoms that are present in proteins, as defined in the
             1939 paper by Pauling.
+        
         vdw_radii_1964 (dict[str, float]):
             The Van Der Waals radii of the atoms that are present in proteins, as defined in the
             1964 paper by Bondi.
+        
         vdw_radii_1996 (dict[str, float]):
             The Van Der Waals radii of the atoms that are present in proteins, as defined in the
             1996 paper by Rowland.
+        
         vdw_radii_2004 (dict[str, float]):
             The Van Der Waals radii of the atoms that are present in proteins, as defined in the
             2004 sadic version (they are the same as the 1964 ones).
+        
         vdw_radii (dict[str, float]):
             The Van Der Waals radii of the atoms that are present in proteins, to be used by
             default.
@@ -250,27 +263,38 @@ class PDBEntity(Repr):
     Class Methods:
         __init__ (arg: str | PandasPdb | Structure, mode: str = "infer") -> None:
             Builds the PDBEntity object based on the protein given in arg.
+        
         build (arg: str | PandasPdb | Structure, mode: str = "infer") -> None:
             Builds the PDBEntity object based on the protein given in arg.
+        
         complete_build_from_entity (self) -> None:
             Completes the build of the PDBEntity object based on the entity attribute.
+        
         build_from_biopandas (self, arg: PandasPdb) -> None:
             Builds the PDBEntity object based on the biopandas.pdb.PandasPdb object given in arg.
+        
         build_from_biopython (self, arg: Structure) -> None:
             Builds the PDBEntity object based on the biopython.structure.Structure object given in
             arg.
+        
         build_from_pdb_file (self, arg: str) -> None:
             Builds the PDBEntity object based on the pdb file given in arg.
+        
         build_from_gzpdb_file (self, arg: str) -> None:
             Builds the PDBEntity object based on the gzipped pdb file given in arg.
+        
         build_from_url (self, url: str) -> None:
             Builds the PDBEntity object based on the url to a pdb structure page given in arg.
+        
         build_from_code (self, code: str) -> None:
             Builds the PDBEntity object based on the code of a pdb structure given in arg.
+        
         __len__ (self) -> int:
             Returns the number of atoms in the PDBEntity object.
+        
         get_centers (self) -> NDArray[np.float32]:
             Returns the coordinates of the atoms in the PDBEntity object.
+        
         get_radii (self, probe_radius: float | None = None) -> NDArray[np.float32]:
             Returns the Van Der Waals radii of the atoms in the PDBEntity object.
     """
@@ -305,9 +329,11 @@ class PDBEntity(Repr):
         Args:
             arg (str | PandasPdb | Structure):
                 The protein to be represented by the PDBEntity object.
+            
             mode (str, optional):
                 The mode to be used to build the PDBEntity object. Can be one of "biopandas",
                 "biopython", "pdb", "gz", "url", "code" or "infer". Defaults to "infer".
+            
             vdw_radii (None | dict[str, float], optional):
                 The Van Der Waals radii of the atoms that are present in proteins. Atom types that
                 are not present in the dictionary will be assigned the default radii. Atom types
@@ -317,6 +343,7 @@ class PDBEntity(Repr):
         Raises:
             TypeError: Raised when arg is not a string, biopandas.pdb.PandasPdb object or
                 biopython.structure.Structure object.
+            
             ValueError: Raised when the mode is to be inferred and arg is not a valid string or
                 when the vdw_radii argument is not None but the key-value pairs are not valid Van
                 Der Waals radii values.
@@ -364,9 +391,11 @@ class PDBEntity(Repr):
         Args:
             arg (str | PandasPdb | Structure):
                 The protein to be represented by the PDBEntity object.
+            
             mode (str, optional):
                 The mode to be used to build the PDBEntity object. Can be one of "biopandas",
                 "biopython", "pdb", "gz", "url", "code" or "infer". Defaults to "infer".
+            
             max_nmodels (int, optional):
                 The maximum number of models to be loaded. It is a security measure to prevent
                 too long loops. Defaults to 1000.
@@ -375,6 +404,7 @@ class PDBEntity(Repr):
             TypeError:
                 Raised when arg is not a string, biopandas.pdb.PandasPdb object or
                 biopython.structure.Structure object.
+            
             ValueError:
                 Raised when the mode is to be inferred and arg is not a valid string.
         """
@@ -464,6 +494,7 @@ class PDBEntity(Repr):
         Args:
             arg (PandasPdb):
                 The PandasPdb object to be used to build the PDBEntity object.
+            
             max_nmodels (int, optional):
                 The maximum number of models to be loaded. It is a security measure to prevent
                 too long loops. Defaults to 1000.
@@ -513,6 +544,7 @@ class PDBEntity(Repr):
         Args:
             url (str):
                 The url to a pdb structure page to be used to build the PDBEntity object.
+            
             max_nmodels (int, optional):
                 The maximum number of models to be loaded. It is a security measure to prevent
                 too long loops. Defaults to 1000.
@@ -540,6 +572,7 @@ class PDBEntity(Repr):
         Args:
             code (str):
                 The code of a pdb structure to be used to build the PDBEntity object.
+            
             max_nmodels (int, optional):
                 The maximum number of models to be loaded. It is a security measure to prevent
                 too long loops. Defaults to 1000.
