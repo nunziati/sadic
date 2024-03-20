@@ -145,3 +145,4 @@ test.py
 build/
 
 *.pdb
+*.pkl

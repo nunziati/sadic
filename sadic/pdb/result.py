@@ -102,17 +102,18 @@ class SadicModelResult(Repr):
         output_atom_index: NDArray[np.int32] = self.atom_index
         output_depth_index: NDArray[np.float32] = self.depth_index
 
-        if self.model.atom_types[0] != "X" and filter_by is not None:
-            filtered_model: Model = self.model.filter(filter_by)
-            if filtered_model.model is None:
-                raise ValueError("The filter is not valid.")
+        if len(self.model.atom_types) != 0:
+            if self.model.atom_types[0] != "X" and filter_by is not None:
+                filtered_model: Model = self.model.filter(filter_by)
+                if filtered_model.model is None:
+                    raise ValueError("The filter is not valid.")
 
-            filter_index = np.where(
-                np.isin(self.atom_index, filtered_model.model.df["ATOM"]["atom_number"].to_numpy())
-            )[0]
+                filter_index = np.where(
+                    np.isin(self.atom_index, filtered_model.model.df["ATOM"]["atom_number"].to_numpy())
+                )[0]
 
-            output_atom_index = self.atom_index[filter_index]
-            output_depth_index = self.depth_index[filter_index]
+                output_atom_index = self.atom_index[filter_index]
+                output_depth_index = self.depth_index[filter_index]
 
         return output_atom_index, output_depth_index if get_index else output_depth_index
 
@@ -195,6 +196,9 @@ class SadicModelResult(Repr):
                 to None.
         """
 
+        if len(self.model.atom_types) == 0:
+            return
+        
         if atom_aggregation is None:
             return
 
