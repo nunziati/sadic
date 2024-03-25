@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/sadic.svg)](https://badge.fury.io/py/sadic)
 [![Downloads](https://pepy.tech/badge/sadic)](https://pepy.tech/project/sadic)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10869425.svg)](https://github.com/nunziati/sadic/releases/tag/2.0.0)
 
 This repository contains the source code for the SADIC v2 package, a modern implementation of the Simple Atom Depth Index Calculator, used to compute the SADIC depth index, a measure of atom depth in protein molecules.
 
