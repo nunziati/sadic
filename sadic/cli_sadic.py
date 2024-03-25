@@ -23,8 +23,8 @@ def parse_args():
     parser.add_argument('-f', '-F', '--file', help='The input argument is a path to a .pdb or .tar.gz file containing a PDB format file of a protein.')
     parser.add_argument('-c', '-C', '--code', help='The input argument is a string representing a PDB protein code.')
 
-    parser.add_argument('--config', help='The configuration file to use. If not specified, the default configuration is used')
-    parser.add_argument('-o', '-O', '--output', help='The output argument, that can either be the path to a .pdb or .tar.gz file containing a PDB format file of a protein, or a string representing a PDB protein code.')
+    parser.add_argument('--config', help='The configuration file to use. If not specified, the default configuration is used.')
+    parser.add_argument('-o', '-O', '--output', help='Path of a .pdb or .tar.gz file to save the result.')
 
     args = parser.parse_args()
 
@@ -43,7 +43,7 @@ def parse_args():
         input_argument = {'mode': 'code', 'arg': args.code}
 
     if input_argument is None:
-        parser.error('Exactly one of argument1, -f, or -s must be specified.')
+        parser.error('Exactly one of argument, -f (or -F, or --file), or -c (or -C, or --code) must be specified.')
 
     return args, input_argument
 

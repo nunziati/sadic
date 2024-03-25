@@ -31,6 +31,11 @@ setup(
     license="GNU General Public License v3.0",
     keywords="protein atom depth",
     long_description=read("README.md"),
+    entry_points={
+        'console_scripts': [
+            'sadic = sadic.cli_sadic:main',
+        ],
+    },
     packages=[
         "sadic",
         "sadic.algorithm",

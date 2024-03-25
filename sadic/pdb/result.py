@@ -102,17 +102,18 @@ class SadicModelResult(Repr):
         output_atom_index: NDArray[np.int32] = self.atom_index
         output_depth_index: NDArray[np.float32] = self.depth_index
 
-        if self.model.atom_types[0] != "X" and filter_by is not None:
-            filtered_model: Model = self.model.filter(filter_by)
-            if filtered_model.model is None:
-                raise ValueError("The filter is not valid.")
+        if len(self.model.atom_types) != 0:
+            if self.model.atom_types[0] != "X" and filter_by is not None:
+                filtered_model: Model = self.model.filter(filter_by)
+                if filtered_model.model is None:
+                    raise ValueError("The filter is not valid.")
 
-            filter_index = np.where(
-                np.isin(self.atom_index, filtered_model.model.df["ATOM"]["atom_number"].to_numpy())
-            )[0]
+                filter_index = np.where(
+                    np.isin(self.atom_index, filtered_model.model.df["ATOM"]["atom_number"].to_numpy())
+                )[0]
 
-            output_atom_index = self.atom_index[filter_index]
-            output_depth_index = self.depth_index[filter_index]
+                output_atom_index = self.atom_index[filter_index]
+                output_depth_index = self.depth_index[filter_index]
 
         return output_atom_index, output_depth_index if get_index else output_depth_index
 
@@ -195,6 +196,9 @@ class SadicModelResult(Repr):
                 to None.
         """
 
+        if len(self.model.atom_types) == 0:
+            return
+        
         if atom_aggregation is None:
             return
 
@@ -471,7 +475,7 @@ class SadicEntityResult(Repr):
         if path is None:
             path = f"./{self.entity.code}_sadic.pdb"
 
-        if not os.path.exists(os.path.dirname(path)):
+        if os.path.dirname(path) != '' and not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
         valid_columns = list(self.entity.entity.df["ATOM"].columns) + [None]
@@ -490,7 +494,7 @@ class SadicEntityResult(Repr):
 
         pdb.df["ATOM"][replaced_column] = np.nan
 
-        for atom_index, depth_index in depth_indexes:
+        for atom_index, depth_index in zip(depth_indexes[0].tolist(), depth_indexes[1].tolist()):
             pdb.df["ATOM"].loc[
                 pdb.df["ATOM"]["atom_number"] == atom_index, replaced_column
             ] = depth_index
