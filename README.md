@@ -16,7 +16,7 @@ The package exposes functions to all the single steps of the algorithm, allowing
 - Alessia Lucia Prete
 - Sara Marziali
 
-### Table of Contents
+<!-- ### Table of Contents
 - **[Install](#install)**
   - **[Install from PyPI](#install-from-pypi)**
   - **[Install from source](#install-from-source)**
@@ -30,8 +30,8 @@ The package exposes functions to all the single steps of the algorithm, allowing
   - **[Main algorithm](#main-algorithm)**
   - **[Architecture](#architecture)**
   - **[Functionalities](#functionalities)**
-<!-- - **[Citing](#citing)** -->
-- **[License](#license)**
+<!-- - **[Citing](#citing)**
+- **[License](#license)** -->
 
 ## Install
 ### Install from PyPI

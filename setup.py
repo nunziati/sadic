@@ -23,14 +23,14 @@ def get_version(rel_path):
 setup(
     name="sadic",
     version=get_version("sadic/__init__.py"),
-    description="Reimplementation as a python package of the software for Simple Atom Depth Index "
-    "Calculator (SADIC)",
+    description="Reimplementation as a python package of the software for Simple Atom Depth Index Calculator (SADIC)",
     url="https://github.com/nunziati/sadic",
     author="Giacomo Nunziati",
     author_email="giacomo.nunziati.0@gmail.com",
-    license="GNU General Public License v3.0",
+    license="MIT License",
     keywords="protein atom depth",
     long_description=read("README.md"),
+    long_description_content_type="text/markdown",
     entry_points={
         'console_scripts': [
             'sadic = sadic.cli_sadic:main',
