@@ -302,8 +302,8 @@ class PDBEntity(Repr):
     _pdb_code_regex: str = r"[1-9][a-zA-Z0-9]{3}"
     _pdb_url_regex: str = r"(http[s]?://)?www.rcsb.org/structure/" + _pdb_code_regex + r"[/]?"
 
-    vdw_radii_1938: dict[str, float] = {"H": 1.2, "C": 1.7, "N": 1.5, "O": 1.4, "S": 1.85}
-    vdw_radii_1964: dict[str, float] = {"H": 1.2, "C": 1.7, "N": 1.55, "O": 1.52, "S": 1.8}
+    vdw_radii_1938: dict[str, float] = {"H": 1.2, "C": 1.7, "N": 1.5, "O": 1.4, "S": 1.85, "P": 1.9}
+    vdw_radii_1964: dict[str, float] = {"H": 1.2, "C": 1.7, "N": 1.55, "O": 1.52, "S": 1.8, "P": 1.8}
     vdw_radii_1996: dict[str, float] = {"H": 1.1, "C": 1.77, "N": 1.64, "O": 1.58, "S": 1.81}
     vdw_radii_2004: dict[str, float] = vdw_radii_1938
     vdw_radii: dict[str, float] = vdw_radii_2004

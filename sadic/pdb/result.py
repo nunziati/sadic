@@ -499,6 +499,7 @@ class SadicEntityResult(Repr):
                 pdb.df["ATOM"]["atom_number"] == atom_index, replaced_column
             ] = depth_index
 
+        pdb.df["HETATM"][replaced_column] = 0.
         pdb.to_pdb(path, gz=gzip, append_newline=append_newline)
 
     def save_txt(
