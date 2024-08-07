@@ -17,7 +17,9 @@ def compute_indexes(method, solid, centers, reference_radius, **parameters):
         return basic(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "basic_vectorized":
         return basic_vectorized(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
-
+    elif method == "translated_sphere_vectorized":
+        return translated_sphere_vectorized(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
+    
 def original(solid, centers, reference_radius, model):
     result = sadic_original_voxel(solid, model, reference_radius)
 
@@ -80,6 +82,51 @@ def basic_vectorized(solid, centers, reference_radius, extreme_coordinates, reso
     for idx, center in enumerate(centers):
         min_coordinates_cartesian = center - reference_radius
         max_coordinates_cartesian = center + reference_radius
+        min_coordinates = np.floor((min_coordinates_cartesian - extreme_coordinates[:, 0]) / resolution).astype(np.int32)
+        max_coordinates = np.ceil((max_coordinates_cartesian - extreme_coordinates[:, 0]) / resolution).astype(np.int32)
+
+        sphere_box_dimensions = max_coordinates - min_coordinates
+        sphere_box = np.zeros(sphere_box_dimensions, dtype=np.int32)
+
+        sphere_int_volume = 0
+        intersection_int_volume = 0
+
+        sphere_grid_coordinates = get_all_coordinate_indexes_from_extremes(min_coordinates, max_coordinates)
+        sphere_cartesian_coordinates = grid_to_cartesian(sphere_grid_coordinates, extreme_coordinates, resolution)
+        sphere_box = np.where(cdist(sphere_cartesian_coordinates, center.reshape(-1, 3), metric="sqeuclidean") <= sq_reference_radius, 1, 0).reshape(sphere_box_dimensions)
+
+        sphere_int_volume = np.count_nonzero(sphere_box)
+
+        solid_min_overlapping_coordinates = np.maximum(min_coordinates, np.array([0, 0, 0]))
+        solid_max_overlapping_coordinates = np.minimum(max_coordinates, np.array([solid.shape[0], solid.shape[1], solid.shape[2]]))
+
+        sphere_min_overlapping_coordinates = np.maximum(-min_coordinates, np.array([0, 0, 0]))
+        sphere_max_overlapping_coordinates = np.minimum(solid.shape - min_coordinates, sphere_box_dimensions)
+
+        solid_overlap = solid[solid_min_overlapping_coordinates[0]:solid_max_overlapping_coordinates[0], solid_min_overlapping_coordinates[1]:solid_max_overlapping_coordinates[1], solid_min_overlapping_coordinates[2]:solid_max_overlapping_coordinates[2]]
+        sphere_overlap = sphere_box[sphere_min_overlapping_coordinates[0]:sphere_max_overlapping_coordinates[0], sphere_min_overlapping_coordinates[1]:sphere_max_overlapping_coordinates[1], sphere_min_overlapping_coordinates[2]:sphere_max_overlapping_coordinates[2]]
+
+        intersection_int_volume = np.count_nonzero(np.logical_and(solid_overlap, sphere_overlap))
+
+        depth_idx[idx] = 2 * (1 - intersection_int_volume / sphere_int_volume)
+
+        p_list.append(sphere_box.shape[0] * sphere_box.shape[1] * sphere_box.shape[2])
+        
+    return depth_idx, dict(p_list = p_list)
+
+def translated_sphere_vectorized(solid, centers, reference_radius, extreme_coordinates, resolution):
+    center_number = centers.shape[0]
+
+    depth_idx = np.empty(center_number, dtype=np.float32)
+
+    p_list = []
+
+    sq_reference_radius = reference_radius ** 2
+
+    for idx, center in enumerate(centers):
+        min_coordinates_cartesian = center - reference_radius - 2 * resolution # NOTA BENE QUESTO 2*resolution: l'hai aggiunto ora, è da qui che parte la trasformazione del metodo
+        max_coordinates_cartesian = center + reference_radius + 2 * resolution
+    
         min_coordinates = np.floor((min_coordinates_cartesian - extreme_coordinates[:, 0]) / resolution).astype(np.int32)
         max_coordinates = np.ceil((max_coordinates_cartesian - extreme_coordinates[:, 0]) / resolution).astype(np.int32)
 

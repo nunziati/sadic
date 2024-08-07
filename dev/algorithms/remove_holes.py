@@ -21,6 +21,11 @@ def original(solid):
     return solid, dict()
 
 def basic(solid):
-    solid = (label(solid)[0] != 0).astype(np.int32)
+    original_voxels = np.sum(solid)
+    connected_components, n_components = label(solid)
+    solid = (connected_components != 0).astype(np.int32)
+    final_voxels = np.sum(solid)
 
-    return solid, dict()
+    filled_voxels = final_voxels - original_voxels
+
+    return solid, dict(n_components=n_components, n_filled_voxels=filled_voxels, n_protein_int_volume=final_voxels)

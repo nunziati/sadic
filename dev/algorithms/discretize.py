@@ -56,7 +56,9 @@ def basic(model, extreme_coordinates, resolution):
                     ):
                         solid[x, y, z] = 1
 
-    return solid, dict(n=n)
+    protein_int_volume = np.sum(solid)
+    
+    return solid, dict(n=n, raw_protein_int_volume=protein_int_volume)
 
 def basic_vectorized(model, extreme_coordinates, resolution):
     centers = model["atoms"]
