@@ -1,6 +1,7 @@
 import argparse
 import csv
 import random
+import multiprocessing as mp
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +18,7 @@ DEFAULT_VERBOSE = False
 DEFAULT_SUBSET = 1000
 DEFAULT_UNIFORM = True
 DEFAULT_RESUME = -1
+DEFAULT_NUM_PROCESSES = 24
 
 def parse_args():
     parser = argparse.ArgumentParser(description="SADIC: Solvent Accessible Depth Index Calculator")
@@ -28,11 +30,12 @@ def parse_args():
     parser.add_argument("--subset", type=int, default=DEFAULT_SUBSET, help="Number of proteins to process")
     parser.add_argument("--uniform", action="store_true", default=DEFAULT_UNIFORM, help="Sample uniformly on the number of atoms")
     parser.add_argument("--resume", type=int, default=DEFAULT_RESUME, help="Index of the protein to resume from")
+    parser.add_argument("--num_processes", type=int, default=DEFAULT_NUM_PROCESSES, help="Number of processes to use for parallel processing")
     return parser.parse_args()
 
 def process_protein_batch(pdb_ids, resolution=0.3, method=None, verbose=True):
     # prepare the output_file as a list of tuples
-    output_file = [("PDB_ID", "resolution", "method", "t1", "t2", "t3", "t4", "N", "n", "n_1", "n_1_raw_protein_int_volume", "n_2", "n_2_components", "n_2_filled_voxels", "n_2_filled_protein_int_volume", "n_3", "n_4", "p_4_min", "p_4_max", "p_4_avg", "p_4_med", "p_4_std")]
+    output_file = []
     
     for idx, pdb_id in enumerate(pdb_ids):
         print(f"Processing protein {idx + 1}/{len(pdb_ids)}\n", end="\n")
@@ -96,6 +99,26 @@ def pick_uniform_tuples(tuples_list, N):
     
     return selected_tuples
 
+def worker(sublist, resolution, method, verbose):
+    return process_protein_batch(sublist, resolution, method, verbose)
+
+def process_protein_batch_in_parallel(pdb_ids, resolution, method, verbose, num_processes):
+    # Split the pdb_ids into sublists for each process
+    sublists = [pdb_ids[i::num_processes] for i in range(num_processes)]
+    
+    # Create a multiprocessing pool
+    with mp.Pool(processes=num_processes) as pool:
+        # Use starmap to pass multiple arguments to the worker function
+        results = pool.starmap(worker, [(sublist, resolution, method, verbose) for sublist in sublists])
+    
+    # Merge the results from all processes
+    merged_results = [item for sublist in results for item in sublist[1:]]
+    
+    output_file = [("PDB_ID", "resolution", "method", "t1", "t2", "t3", "t4", "N", "n", "n_1", "n_1_raw_protein_int_volume", "n_2", "n_2_components", "n_2_filled_voxels", "n_2_filled_protein_int_volume", "n_3", "n_4", "p_4_min", "p_4_max", "p_4_avg", "p_4_med", "p_4_std")]
+    output_file += merged_results
+
+    return merged_results
+
 def main():
     args = parse_args()
 
@@ -106,6 +129,7 @@ def main():
     output_filename = args.output
     sample_uniformly = args.uniform
     protein_subset = args.subset
+    num_processes = args.num_processes
 
     # read the input csv file as a list of (pdb_id, atom_count)
     with open(input_arg, "r") as f:
@@ -119,17 +143,17 @@ def main():
         pdb_ids = pick_uniform_tuples(all_pdb_ids, protein_subset)
 
     # UNCOMMENT TO VISUALIZE THE ATOM COUNT DISTRIBUTION
-    # atom_numbers = [pdb_id[1] for pdb_id in pdb_ids]
+    atom_numbers = [pdb_id[1] for pdb_id in pdb_ids]
     # plot the distribution of atom numbers
-    # plt.hist(atom_numbers, bins=30)
-    # plt.xlabel("Number of atoms")
-    # plt.ylabel("Frequency")
-    # plt.title("Distribution of atom numbers")
-    # plt.show()
+    plt.hist(atom_numbers, bins=30)
+    plt.xlabel("Number of atoms")
+    plt.ylabel("Frequency")
+    plt.title("Distribution of atom numbers")
+    plt.show()
     
     pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
 
-    output_file = process_protein_batch(pdb_ids, resolution, method, verbose)
+    output_file = process_protein_batch_in_parallel(pdb_ids, resolution, method, verbose, num_processes)
 
     # write the output_file to the output file
     with open(output_filename, "w") as f:
