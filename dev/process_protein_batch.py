@@ -12,7 +12,7 @@ random.seed(42)
 
 DEFAULT_INPUT = "proteins_dataset_PDB_with_protein_size.csv"
 DEFAULT_OUTUPT = "output2.csv"
-DEFAULT_RESOLUTION = 0.3
+DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = "basic_vectorized"
 DEFAULT_VERBOSE = False
 DEFAULT_SUBSET = 1000
@@ -83,16 +83,22 @@ def process_protein_batch(pdb_ids, resolution=0.3, method=None, verbose=True):
 def pick_uniform_tuples(tuples_list, N):
     # Sort the tuples by the second element
     sorted_tuples = sorted(tuples_list, key=lambda x: x[1])
-    
+
     # Extract the second elements and calculate the empirical CDF
-    second_elements = [y for _, y in sorted_tuples]
-    cdf_values = np.linspace(0, 1, len(second_elements), endpoint=False) + (0.5 / len(second_elements))
+    second_elements = np.array([y for _, y in sorted_tuples])
+
+    min_y = second_elements[0]
+    max_y = second_elements[-1]
     
-    # Generate N random numbers uniformly distributed between 0 and 1
-    random_numbers = sorted(random.random() for _ in range(N))
-    
-    # Use the empirical CDF to map random numbers to indices
-    indices = np.searchsorted(cdf_values, random_numbers)
+    # Generate N random numbers uniformly distributed between min_y and max_y
+    random_second_element = np.random.uniform(min_y, max_y, N)
+
+    # Find the indices of the closest elements in the sorted list, removing the picked elements
+    indices = []
+    for y in random_second_element:
+        idx = np.argmin(np.abs(second_elements - y))
+        indices.append(idx)
+        second_elements = np.delete(second_elements, idx)
     
     # Select the tuples corresponding to these indices
     selected_tuples = [sorted_tuples[i] for i in indices]
@@ -135,6 +141,8 @@ def main():
     with open(input_arg, "r") as f:
         all_pdb_ids = list(csv.reader(f))[1:]
 
+    all_pdb_ids = [(pdb_id, int(atom_count)) for pdb_id, atom_count in all_pdb_ids]
+
     if protein_subset == -1:
         pdb_ids = all_pdb_ids
     elif not sample_uniformly:
@@ -144,6 +152,7 @@ def main():
 
     # UNCOMMENT TO VISUALIZE THE ATOM COUNT DISTRIBUTION
     atom_numbers = [pdb_id[1] for pdb_id in pdb_ids]
+    print(f"Atom numbers: {atom_numbers}")
     # plot the distribution of atom numbers
     plt.hist(atom_numbers, bins=30)
     plt.xlabel("Number of atoms")
