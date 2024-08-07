@@ -9,23 +9,25 @@ from process_single_protein import process_protein
 
 random.seed(42)
 
-DEFAULT_INPUT = "input.txt"
-DEFAULT_OUTUPT = "output.csv"
+DEFAULT_INPUT = "proteins_dataset_PDB_with_protein_size.csv"
+DEFAULT_OUTUPT = "output2.csv"
 DEFAULT_RESOLUTION = 0.3
 DEFAULT_METHOD = "basic_vectorized"
 DEFAULT_VERBOSE = False
-DEFAULT_SUBSET = -1
+DEFAULT_SUBSET = 1000
+DEFAULT_UNIFORM = True
+DEFAULT_RESUME = -1
 
 def parse_args():
     parser = argparse.ArgumentParser(description="SADIC: Solvent Accessible Depth Index Calculator")
-    parser.add_argument("input", type=str, default=DEFAULT_INPUT, help="Input PDB file or PDB ID")
-    parser.add_argument("output", type=str, default=DEFAULT_OUTUPT, help="Output CSV file")
+    parser.add_argument("--input", type=str, default=DEFAULT_INPUT, help="Input PDB file or PDB ID")
+    parser.add_argument("--output", type=str, default=DEFAULT_OUTUPT, help="Output CSV file")
     parser.add_argument("--resolution", type=float, default=DEFAULT_RESOLUTION, help="Resolution of the grid")
     parser.add_argument("--method", type=str, default=DEFAULT_METHOD, help="Method to use for the algorithm")
     parser.add_argument("--verbose", action="store_true", default=DEFAULT_VERBOSE, help="Prints the progress of the algorithm")
     parser.add_argument("--subset", type=int, default=DEFAULT_SUBSET, help="Number of proteins to process")
-    parser.add_argument("--uniform", action="store_true", help="Sample uniformly on the number of atoms")
-    parser.add_argument("--resume", type=int, default=-1, help="Index of the protein to resume from")
+    parser.add_argument("--uniform", action="store_true", default=DEFAULT_UNIFORM, help="Sample uniformly on the number of atoms")
+    parser.add_argument("--resume", type=int, default=DEFAULT_RESUME, help="Index of the protein to resume from")
     return parser.parse_args()
 
 def process_protein_batch(pdb_ids, resolution=0.3, method=None, verbose=True):
@@ -37,6 +39,9 @@ def process_protein_batch(pdb_ids, resolution=0.3, method=None, verbose=True):
         
         try:
             output = process_protein(pdb_id.strip(), resolution=resolution, method=method, verbose=verbose)
+        except KeyboardInterrupt:
+            print("Interrupted by the user\n", end="\n")
+            break
         except:
             print(f"Error processing protein {pdb_id.strip()}\n", end="\n")
             output_tuple = tuple([pdb_id.strip(), "ERROR"] + [None] * (len(output_file[0]) - 2))
@@ -102,9 +107,9 @@ def main():
     sample_uniformly = args.uniform
     protein_subset = args.subset
 
-    # read the input file as a list of PDB IDs
+    # read the input csv file as a list of (pdb_id, atom_count)
     with open(input_arg, "r") as f:
-        all_pdb_ids = f.readlines()
+        all_pdb_ids = list(csv.reader(f))[1:]
 
     if protein_subset == -1:
         pdb_ids = all_pdb_ids
@@ -113,16 +118,16 @@ def main():
     else:
         pdb_ids = pick_uniform_tuples(all_pdb_ids, protein_subset)
 
-    atom_numbers = [pdb_id[1] for pdb_id in pdb_ids]
-    pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
-
+    # UNCOMMENT TO VISUALIZE THE ATOM COUNT DISTRIBUTION
+    # atom_numbers = [pdb_id[1] for pdb_id in pdb_ids]
     # plot the distribution of atom numbers
-    plt.hist(atom_numbers, bins=100)
-    plt.xlabel("Number of atoms")
-    plt.ylabel("Frequency")
-    plt.title("Distribution of atom numbers")
-    plt.show()
+    # plt.hist(atom_numbers, bins=30)
+    # plt.xlabel("Number of atoms")
+    # plt.ylabel("Frequency")
+    # plt.title("Distribution of atom numbers")
+    # plt.show()
     
+    pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
 
     output_file = process_protein_batch(pdb_ids, resolution, method, verbose)
 
