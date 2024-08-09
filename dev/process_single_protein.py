@@ -70,7 +70,8 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
 
     print_task("Computing indexes")
     time4 = time.time()
-    result, complexity_variables_4 = compute_indexes(indexes_computation_method, solid, atoms, reference_radius, extreme_coordinates=extreme_coordinates, resolution=resolution)
+    # result, complexity_variables_4 = compute_indexes(indexes_computation_method, solid, atoms, reference_radius, extreme_coordinates=extreme_coordinates, resolution=resolution)
+    result, complexity_variables_4 = compute_indexes("translated_sphere_vectorized", solid, atoms, reference_radius, extreme_coordinates=extreme_coordinates, resolution=resolution)
     
     print_task()
 
@@ -102,6 +103,6 @@ def main():
     print(output["result"])
     print(output["times"])
     print(output["complexity_variables"])
-    
+
 if __name__ == "__main__":
     main()

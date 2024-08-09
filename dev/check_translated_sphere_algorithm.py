@@ -94,8 +94,9 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
     print("Check positive sign: ", np.all(result_2 >= 0))
     # plot histogram
     import matplotlib.pyplot as plt
+    plt.figure(1)
     plt.hist(diff, bins=100)
-    plt.show()
+    plt.figure(2)
     plt.hist(rel_diff, bins=100)
     plt.show()
 

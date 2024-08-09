@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('output2.csv')
+df = pd.read_csv('output2_2.csv')
 
 print(df.head())
 print(df.columns)
@@ -38,6 +38,15 @@ plots = [
 
 for plot in plots:
     df = df.sort_values(by=plot[0])
-    df.plot(x=plot[0], y=plot[1], kind="scatter", title=f"{plot[0]} vs {plot[1]}")
+    if plot[1] == "reference radius time":
+        df.plot(x=plot[0], y=plot[1], kind="scatter", title=f"{plot[0]} vs {plot[1]}", ylim=[0, 60])
+    else:
+        df.plot(x=plot[0], y=plot[1], kind="scatter", title=f"{plot[0]} vs {plot[1]}")
+
+df = df.sort_values(by="N")
+df.plot(x="N", ylim=(-1, 20), y=["discretization time", "holes removal time", "reference radius time", "indexes computation time"], kind="line", title="Time vs N")
+
+df = df.sort_values(by="n")
+df.plot(x="n", ylim=(-1, 20), y=["discretization time", "holes removal time", "reference radius time", "indexes computation time"], kind="line", title="Time vs n")
 
 plt.show()
