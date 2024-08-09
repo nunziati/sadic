@@ -16,14 +16,14 @@ random.seed(SEED)
 np.random.seed(SEED)
 
 DEFAULT_INPUT = "proteins_dataset_PDB_with_protein_size.csv"
-DEFAULT_OUTUPT = "output2_singlecore.csv"
+DEFAULT_OUTUPT = "output2_translated_sphere.csv"
 DEFAULT_RESOLUTION = 0.5
-DEFAULT_METHOD = "basic_vectorized"
+DEFAULT_METHOD = "translated_sphere_vectorized"
 DEFAULT_VERBOSE = False
 DEFAULT_SUBSET = 1000
 DEFAULT_UNIFORM = True
 DEFAULT_RESUME = -1
-DEFAULT_NUM_PROCESSES = 12
+DEFAULT_NUM_PROCESSES = 8
 
 OUTPUT_FILE_HEADER = ("PDB_ID", "resolution", "method", "t1", "t2", "t3", "t4", "N", "n", "n_1", "n_1_raw_protein_int_volume", "n_2", "n_2_components", "n_2_filled_voxels", "n_2_filled_protein_int_volume", "n_3", "n_4", "p_4_min", "p_4_max", "p_4_avg", "p_4_med", "p_4_std")
 
@@ -233,7 +233,7 @@ def main():
     pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
 
     print("Start processing")
-    output_file = process_protein_batch_scalar(pdb_ids, resolution, method, verbose)
+    output_file = process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, num_processes)
     print("Finished processing")
 
     try:

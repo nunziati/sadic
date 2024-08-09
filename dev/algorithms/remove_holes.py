@@ -14,6 +14,8 @@ def remove_holes(method, solid, **parameters):
         return basic(solid)
     elif method == "basic_vectorized":
         return basic(solid)
+    elif method == "translated_sphere_vectorized":
+        return basic(solid)
 
 def original(solid):
     solid.remove_holes()
