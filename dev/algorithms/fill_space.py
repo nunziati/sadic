@@ -12,7 +12,7 @@ def fill_space(method, solid, **parameters):
     last_method = scipy
 
     if method == "none":
-        return solid, dict()
+        return solid, dict(protein_int_volume=np.sum(solid))
     elif method == "scipy":
         return scipy(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
     elif method == "skimage":

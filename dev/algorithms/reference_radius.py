@@ -24,8 +24,8 @@ def find_reference_radius(method, solid, atoms, **parameters):
         return basic_vectorized(solid, atoms, parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "translated_sphere_vectorized":
         return basic_vectorized(solid, atoms, parameters["extreme_coordinates"], parameters["resolution"])
-    elif method == "coeurjolly_translated_sphere":
-        return coeurjolly_translated_sphere(solid, atoms, parameters["extreme_coordinates"], parameters["resolution"])
+    # elif method == "coeurjolly_translated_sphere":
+    #     return coeurjolly_translated_sphere(solid, atoms, parameters["extreme_coordinates"], parameters["resolution"])
     
 def original(solid, atoms):
     reference_radius = find_max_radius_point_voxel(solid)[1]

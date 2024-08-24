@@ -31,7 +31,7 @@ DEFAULT_NUM_PROCESSES = 8
 ############################## CONFIGURE METHODS ##############################
 ALIGNMENT_METHOD = "basic"
 DISCRETIZATION_METHOD = "basic_vectorized"
-FILL_SPACE_METHOD = "none"
+FILL_SPACE_METHOD = "skimage"
 HOLES_REMOVAL_METHOD = "basic_vectorized"
 REFERENCE_RADIUS_METHOD = "basic_vectorized"
 INDEXES_COMPUTATION_METHOD = "translated_sphere_vectorized"
