@@ -135,9 +135,9 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
 
     np.save(depth_indexes_path, output["result"])
     np.save(p_disc_path, p_disc_array)
-    np.save(disc_voxel_operations_map_path, np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32))
+    # np.save(disc_voxel_operations_map_path, np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32))
     np.save(p_idx_path, p_idx_array)
-    np.save(idx_voxel_operations_map_path, np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32))
+    # np.save(idx_voxel_operations_map_path, np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32))
 
     output_tuple = (
         pdb_id.strip(),
