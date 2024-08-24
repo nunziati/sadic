@@ -29,16 +29,24 @@ def parse_args():
     parser.add_argument("--verbose", action="store_true", default=DEFAULT_VERBOSE, help="Prints the progress of the algorithm")
     return parser.parse_args()
 
-def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, verbose=True):
-    alignment_method = "basic"
-    discretization_method = "basic_vectorized" if method is None else method
-    fill_space_method = "none"
-    holes_removal_method = "basic_vectorized" if method is None else method
-    reference_radius_method = "basic_vectorized" if method is None else method
-    indexes_computation_method = "translated_sphere_vectorized"
-    # indexes_computation_method = "octrees_range_query"
-    # indexes_computation_method = "kdtrees_sklearn"
-    # indexes_computation_method = "kdtrees_voxel_scan_loop"
+def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, verbose=True, single_methods=None):
+    if single_methods is None:
+        single_methods = dict(
+            alignment_method = "basic",
+            discretization_method = "basic_vectorized" if method is None else method,
+            fill_space_method = "none",
+            holes_removal_method = "basic_vectorized" if method is None else method,
+            reference_radius_method = "basic_vectorized" if method is None else method,
+            indexes_computation_method = "translated_sphere_vectorized"
+        )
+    
+    alignment_method = single_methods["alignment_method"]
+    discretization_method = single_methods["discretization_method"]
+    fill_space_method = single_methods["fill_space_method"]
+    holes_removal_method = single_methods["holes_removal_method"]
+    reference_radius_method = single_methods["reference_radius_method"]
+    indexes_computation_method = single_methods["indexes_computation_method"]
+
     
     print_task = TaskPrinter(verbose=verbose)
     print_task("Loading protein")
@@ -56,11 +64,10 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
 
     print_task("Alignment")
     time_align_start = time.time()
-    atoms, _ = align(alignment_method, atoms)
+    atoms, complexity_variables_alignment = align(alignment_method, atoms)
     time_align_end = time.time()
 
     print_task("Computing extreme coordinates")
-    time_computing_extreme_coordinates_start = time.time()
     extreme_coordinates = np.empty((3, 2), dtype=np.float32)
     for axis in range(3):
         extreme_coordinates[axis, 0] = np.min(atoms[:, axis] - radii)
@@ -73,47 +80,60 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
             / resolution
         )[0])
     )
-    time_computing_extreme_coordinates_end = time.time()
 
     model = dict(atoms=atoms, radii=radii)
 
     print_task("Discretization")
-    time1 = time.time()
-    solid, complexity_variables_1 = discretize(discretization_method, model, extreme_coordinates=extreme_coordinates, resolution=resolution)
+    discretization_time_start = time.time()
+    solid, complexity_variables_discretization = discretize(discretization_method, model, extreme_coordinates=extreme_coordinates, resolution=resolution)
+    discretization_time_end = time.time()
 
     print_task("Space filling")
-    time1_b = time.time()
+    space_fill_time_start = time.time()
     if fill_space_method != "none":
-        solid, complexity_variables_1b = fill_space(discretization_method, solid, resolution=resolution, probe_radius=PDBEntity.vdw_radii['O'])
+        solid, complexity_variables_space_filling = fill_space(discretization_method, solid, resolution=resolution, probe_radius=PDBEntity.vdw_radii['O'])
     else:
         complexity_variables_1b = dict()
+    space_fill_time_end = time.time()
 
     print_task("Removing holes")
-    time2 = time.time()
-    solid, complexity_variables_2 = remove_holes(holes_removal_method, solid)
+    hole_removal_time_start = time.time()
+    solid, complexity_variables_hole_removal = remove_holes(holes_removal_method, solid)
+    hole_removal_time_end = time.time()
 
     print_task("Finding reference radius")
-    time3 = time.time()
-    reference_radius, complexity_variables_3 = find_reference_radius(reference_radius_method, solid, atoms, extreme_coordinates=extreme_coordinates, resolution=resolution)
-
+    reference_radius_time_start = time.time()
+    reference_radius, complexity_variables_reference_radius = find_reference_radius(reference_radius_method, solid, atoms, extreme_coordinates=extreme_coordinates, resolution=resolution)
+    reference_radius_time_end = time.time()
     print_task("Computing indexes")
-    time4 = time.time()
-    result, complexity_variables_4 = compute_indexes(indexes_computation_method, solid, atoms, reference_radius, extreme_coordinates=extreme_coordinates, resolution=resolution)
-
+    
+    compute_indexes_time_start = time.time()
+    result, complexity_variables_depth_indexes = compute_indexes(indexes_computation_method, solid, atoms, reference_radius, extreme_coordinates=extreme_coordinates, resolution=resolution)
+    compute_indexes_time_end = time.time()
     print_task()
 
-    time5 = time.time()
-
+    
     return dict(
         result = result,
-        times = (time_align_end - time_align_start, time1_b - time1, time2 - time1_b, time3 - time2, time4 - time3, time5 - time4),
+        times = dict(
+            alignment = time_align_end - time_align_start,
+            discretization = discretization_time_end - discretization_time_start,
+            space_fill = space_fill_time_end - space_fill_time_start,
+            hole_removal = hole_removal_time_end - hole_removal_time_start,
+            reference_radius = reference_radius_time_end - reference_radius_time_start,
+            compute_indexes = compute_indexes_time_end - compute_indexes_time_start
+        ),
         complexity_variables = {
             "N": atoms.shape[0],
             "n": solid.shape[0] * solid.shape[1] * solid.shape[2],
-            "1": complexity_variables_1,
-            "2": complexity_variables_2,
-            "3": complexity_variables_3,
-            "4": complexity_variables_4
+            "complexity_variables": {
+                "alignment": complexity_variables_alignment,
+                "discretization": complexity_variables_discretization,
+                "space_filling": complexity_variables_space_filling,
+                "hole_removal": complexity_variables_hole_removal,
+                "reference_radius": complexity_variables_reference_radius,
+                "depth_indexes": complexity_variables_depth_indexes
+            }
         },
         reference_radius=reference_radius,
         solid=solid

@@ -17,8 +17,6 @@ def fill_space(method, solid, **parameters):
         return scipy(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
     elif method == "skimage":
         return skimage(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
-    elif method == "skimage_by_reconstruction":
-        return skimage_by_reconstruction(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
     else:
         return last_method(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
 
@@ -46,7 +44,9 @@ def scipy(solid, resolution, probe_radius):
     # Fill the space
     solid = binary_closing(solid, structure=structuring_element)
 
-    return solid, dict()
+    protein_int_volume = np.sum(solid)
+
+    return solid, dict(protein_int_volume=protein_int_volume)
 
 def skimage(solid, resolution, probe_radius):
     # Create the spherical structuring element
@@ -55,13 +55,6 @@ def skimage(solid, resolution, probe_radius):
     # Fill the space
     solid = closing(solid, structuring_element)
 
-    return solid, dict()
+    protein_int_volume = np.sum(solid)
 
-def skimage_by_reconstruction(solid, resolution, probe_radius):
-    # Create the spherical structuring element
-    structuring_element = ball(int(probe_radius / resolution))
-
-    # Fill the space
-    solid = closing(solid, structuring_element)
-
-    return solid, dict()
+    return solid, dict(protein_int_volume=protein_int_volume)

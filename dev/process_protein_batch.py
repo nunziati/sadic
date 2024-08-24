@@ -4,6 +4,7 @@ import random
 import multiprocessing as mp
 import queue
 import pickle
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,21 +17,72 @@ random.seed(SEED)
 np.random.seed(SEED)
 
 DEFAULT_INPUT = "proteins_dataset_PDB_with_protein_size.csv"
-DEFAULT_OUTUPT = "output2_translated_sphere.csv"
+DEFAULT_EXPERIMENT_FOLDER = "experiments"
+DEFAULT_EXPERIMENT_NAME = "old_unaligned"
 DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = "translated_sphere_vectorized"
 DEFAULT_VERBOSE = False
-DEFAULT_SUBSET = 100
+DEFAULT_SUBSET = 1000
 DEFAULT_UNIFORM = True
 DEFAULT_RESUME = -1
-DEFAULT_NUM_PROCESSES = 8
+DEFAULT_NUM_PROCESSES = 4
 
-OUTPUT_FILE_HEADER = ("PDB_ID", "resolution", "method", "t1", "t2", "t3", "t4", "N", "n", "n_1", "n_1_raw_protein_int_volume", "n_2", "n_2_components", "n_2_filled_voxels", "n_2_filled_protein_int_volume", "n_3", "n_4", "p_4_min", "p_4_max", "p_4_avg", "p_4_med", "p_4_std")
+
+############################## CONFIGURE METHODS ##############################
+ALIGNMENT_METHOD = "basic"
+DISCRETIZATION_METHOD = "basic_vectorized"
+FILL_SPACE_METHOD = "none"
+HOLES_REMOVAL_METHOD = "basic_vectorized"
+REFERENCE_RADIUS_METHOD = "basic_vectorized"
+INDEXES_COMPUTATION_METHOD = "translated_sphere_vectorized"
+###############################################################################
+
+
+
+OUTPUT_FILE_HEADER = (
+    "PDB_ID",
+    "resolution",
+    "alignment_method",
+    "discretization_method",
+    "fill_space_method",
+    "holes_removal_method",
+    "reference_radius_method",
+    "indexes_computation_method",
+    "t_alignment",
+    "t_discretization",
+    "t_fill_space",
+    "t_holes_removal",
+    "t_reference_radius",
+    "t_indexes_computation",
+    "N",
+    "n",
+    "reference_radius",
+    "depth_indexes_path",
+    "protein_int_volume_discretization",
+    "protein_int_volume_space_fill",
+    "connected_components",
+    "protein_int_volume_holes_removal",
+    "p_disc_path",
+    "p_disc_min",
+    "p_disc_max",
+    "p_disc_avg",
+    "p_disc_med",
+    "p_disc_std",
+    "disc_voxel_operations_map_path",
+    "p_idx_path",
+    "p_idx_min",
+    "p_idx_max",
+    "p_idx_avg",
+    "p_idx_med",
+    "p_idx_std",
+    "idx_voxel_operations_map_path",
+    )
 
 def parse_args():
     parser = argparse.ArgumentParser(description="SADIC: Solvent Accessible Depth Index Calculator")
     parser.add_argument("--input", type=str, default=DEFAULT_INPUT, help="Input PDB file or PDB ID")
-    parser.add_argument("--output", type=str, default=DEFAULT_OUTUPT, help="Output CSV file")
+    parser.add_argument("--experiment_folder", type=str, default=DEFAULT_EXPERIMENT_FOLDER, help="Output experiment folder")
+    parser.add_argument("--experiment_name", type=str, default=DEFAULT_EXPERIMENT_NAME, help="Output experiment name")
     parser.add_argument("--resolution", type=float, default=DEFAULT_RESOLUTION, help="Resolution of the grid")
     parser.add_argument("--method", type=str, default=DEFAULT_METHOD, help="Method to use for the algorithm")
     parser.add_argument("--verbose", action="store_true", default=DEFAULT_VERBOSE, help="Prints the progress of the algorithm")
@@ -40,51 +92,93 @@ def parse_args():
     parser.add_argument("--num_processes", type=int, default=DEFAULT_NUM_PROCESSES, help="Number of processes to use for parallel processing")
     return parser.parse_args()
 
-def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=None, verbose=True):
+def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=None, experiment_folder="", verbose=True):
+    if experiment_folder == "":
+        raise ValueError("experiment_folder must be specified")
+    
     try:
-        output = process_protein(pdb_id.strip(), resolution=resolution, method=method, verbose=verbose)
+        output = process_protein(pdb_id.strip(), resolution=resolution, method=method, verbose=verbose,
+                                 single_methods={
+                                        "alignment_method": ALIGNMENT_METHOD,
+                                        "discretization_method": DISCRETIZATION_METHOD,
+                                        "fill_space_method": FILL_SPACE_METHOD,
+                                        "holes_removal_method": HOLES_REMOVAL_METHOD,
+                                        "reference_radius_method": REFERENCE_RADIUS_METHOD,
+                                        "indexes_computation_method": INDEXES_COMPUTATION_METHOD
+                                 })
     except KeyboardInterrupt as e:
         print("Interrupted by the user\n", end="\n")
         raise e
     except:
         print(f"Error processing protein {pdb_id.strip()}\n", end="\n")
-        return tuple([pdb_id.strip(), "ERROR"] + [None] * 19)
+        return tuple([pdb_id.strip(), "ERROR"] + [None] * len(OUTPUT_FILE_HEADER) - 2)
+
+    depth_indexes_path = os.path.join(experiment_folder, "depth_indexes", f"{pdb_id.strip()}.npy")
+    p_disc_path = os.path.join(experiment_folder, "discretization", "p", f"{pdb_id.strip()}.npy")
+    disc_voxel_operations_map_path = os.path.join(experiment_folder, "discretization", "voxel_operations_map", f"{pdb_id.strip()}.npy")
+    p_idx_path = os.path.join(experiment_folder, "indexes_computation", "p", f"{pdb_id.strip()}.npy")
+    idx_voxel_operations_map_path = os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map", f"{pdb_id.strip()}.npy")
+
+    p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
+    p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
+
+    np.save(depth_indexes_path, output["result"])
+    np.save(p_disc_path, p_disc_array)
+    np.save(disc_voxel_operations_map_path, np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32))
+    np.save(p_idx_path, p_idx_array)
+    np.save(idx_voxel_operations_map_path, np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32))
 
     output_tuple = (
         pdb_id.strip(),
         resolution,
-        method,
-        output["times"][0],
-        output["times"][1],
-        output["times"][2],
-        output["times"][3],
+        ALIGNMENT_METHOD,
+        DISCRETIZATION_METHOD,
+        FILL_SPACE_METHOD,
+        HOLES_REMOVAL_METHOD,
+        REFERENCE_RADIUS_METHOD,
+        INDEXES_COMPUTATION_METHOD,
+        output["times"]["alignment"],
+        output["times"]["discretization"],
+        output["times"]["space_fill"],
+        output["times"]["holes_removal"],
+        output["times"]["reference_radius"],
+        output["times"]["compute_indexes"],
         output["complexity_variables"]["N"],
         output["complexity_variables"]["n"],
-        output["complexity_variables"]["1"]["n"] if "n" in output["complexity_variables"]["1"] else None,
-        output["complexity_variables"]["1"]["raw_protein_int_volume"] if "raw_protein_int_volume" in output["complexity_variables"]["1"] else None,
-        output["complexity_variables"]["2"]["n"] if "n" in output["complexity_variables"]["2"] else None,
-        output["complexity_variables"]["2"]["n_components"] if "n_components" in output["complexity_variables"]["2"] else None,
-        output["complexity_variables"]["2"]["n_filled_voxels"] if "n_filled_voxels" in output["complexity_variables"]["2"] else None,
-        output["complexity_variables"]["2"]["n_protein_int_volume"] if "n_protein_int_volume" in output["complexity_variables"]["2"] else None,
-        output["complexity_variables"]["3"]["n"] if "n" in output["complexity_variables"]["3"] else None,
-        output["complexity_variables"]["4"]["n"] if "n" in output["complexity_variables"]["4"] else None,
-        np.array(output["complexity_variables"]["4"]["p_list"]).min() if "p_list" in output["complexity_variables"]["4"] else None,
-        np.array(output["complexity_variables"]["4"]["p_list"]).max() if "p_list" in output["complexity_variables"]["4"] else None,
-        np.array(output["complexity_variables"]["4"]["p_list"]).mean() if "p_list" in output["complexity_variables"]["4"] else None,
-        np.median(np.array(output["complexity_variables"]["4"]["p_list"])) if "p_list" in output["complexity_variables"]["4"] else None,
-        np.array(output["complexity_variables"]["4"]["p_list"]).std() if "p_list" in output["complexity_variables"]["4"] else None,
+        output["reference_radius"],
+        depth_indexes_path,
+        output["complexity_variables"]["discretization"]["protein_int_volume"],
+        output["complexity_variables"]["space_filling"]["protein_int_volume"],
+        output["complexity_variables"]["hole_removal"]["n_components"],
+        output["complexity_variables"]["hole_removal"]["protein_int_volume"],
+        p_disc_path,
+        p_disc_array.min(),
+        p_disc_array.max(),
+        p_disc_array.mean(),
+        np.median(p_disc_array),
+        p_disc_array.std(),
+        disc_voxel_operations_map_path,
+        p_idx_path,
+        p_idx_array.min(),
+        p_idx_array.max(),
+        p_idx_array.mean(),
+        np.median(p_idx_array),
+        p_idx_array.std(),
+        idx_voxel_operations_map_path,
     )
     
     return output_tuple
 
-def process_protein_batch(pdb_ids, resolution=0.3, method=None, verbose=True):
+def process_protein_batch(pdb_ids, resolution=0.3, method=None, experiment_folder="", verbose=True):
+    if experiment_folder == "":
+        raise ValueError("experiment_folder must be specified")
     # prepare the output_file as a list of tuples
     output_file = []
     
     for idx, pdb_id in enumerate(pdb_ids):
         print(f"Processing protein {idx + 1}/{len(pdb_ids)}\n", end="\n")
         
-        output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, verbose=verbose)
+        output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, experiment_folder=experiment_folder, verbose=verbose)
 
         output_file.append(output_tuple)
 
@@ -118,7 +212,7 @@ def pick_uniform_tuples(tuples_list, N):
 def sublist_worker(sublist, resolution, method, verbose):
     return process_protein_batch(sublist, resolution, method, verbose)
 
-def queue_worker(input_queue, output_queue, n_proteins, resolution, method, verbose):
+def queue_worker(input_queue, output_queue, n_proteins, resolution, method, experiment_folder, verbose):
     while not input_queue.empty():
         try:
             pdb_id, idx = input_queue.get_nowait()
@@ -129,16 +223,16 @@ def queue_worker(input_queue, output_queue, n_proteins, resolution, method, verb
             raise e
 
         print(f"Processing protein {idx + 1}/{n_proteins}\n", end="\n")
-        output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, verbose=verbose)
+        output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, experiment_folder=experiment_folder, verbose=verbose)
         output_queue.put(output_tuple)
 
-def process_protein_batch_scalar(pdb_ids, resolution, method, verbose):
+def process_protein_batch_scalar(pdb_ids, resolution, method, experiment_folder, verbose):
     output_file = [OUTPUT_FILE_HEADER]
 
     for idx, pdb_id in enumerate(pdb_ids):
         print(f"Processing protein {idx + 1}/{len(pdb_ids)}\n", end="\n")
         
-        output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, verbose=verbose)
+        output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, experiment_folder=experiment_folder, verbose=verbose)
 
         output_file.append(output_tuple)
 
@@ -162,7 +256,7 @@ def process_protein_batch_in_parallel_sublists(pdb_ids, resolution, method, verb
 
     return merged_results
 
-def process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, num_processes):
+def process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, experiment_folder, num_processes):
     input_queue = mp.Queue()
     output_queue = mp.Queue()
 
@@ -202,10 +296,13 @@ def main():
     resolution = args.resolution
     method = args.method
     verbose = args.verbose
-    output_filename = args.output
+    experiment_folder = args.experiment_folder
+    experiment_name = args.experiment_name
     sample_uniformly = args.uniform
     protein_subset = args.subset
     num_processes = args.num_processes
+
+    folder_path = os.path.join(experiment_folder, experiment_name)
 
     # read the input csv file as a list of (pdb_id, atom_count)
     with open(input_arg, "r") as f:
@@ -233,9 +330,10 @@ def main():
     pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
 
     print("Start processing")
-    output_file = process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, num_processes)
+    output_file = process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, folder_path, num_processes)
     print("Finished processing")
 
+    output_filename = os.path.join(folder_path, f"summary.csv")
     try:
         # write the output_file to the output file
         with open(output_filename, "w") as f:

@@ -73,7 +73,8 @@ def basic_vectorized(model, extreme_coordinates, resolution):
     ).astype(np.int32)
     
     solid = np.full(dimensions, 0, dtype=np.int32)
-
+    p_list = []
+    visit_map = np.zeros_like(solid, dtype=np.int32)
     n = 0
 
     # this for loop is N*R_wdw_max^3
@@ -100,4 +101,9 @@ def basic_vectorized(model, extreme_coordinates, resolution):
             np.logical_or(sphere_view[scaled_overlapping_coordinates[:, 0], scaled_overlapping_coordinates[:, 1], scaled_overlapping_coordinates[:, 2]], sphere_overlap).astype(np.int32).reshape(-1)
         )
 
-    return solid, dict(n=n)
+        p_list.append(sphere_view.shape[0] * sphere_view.shape[1] * sphere_view.shape[2])
+        visit_map[overlapping_coordinates[:, 0], overlapping_coordinates[:, 1], overlapping_coordinates[:, 2]] += 1
+
+    protein_int_volume = np.sum(solid)
+
+    return solid, dict(n=n, p_list=p_list, visit_map=visit_map, protein_int_volume=protein_int_volume)
