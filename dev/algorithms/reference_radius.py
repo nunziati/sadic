@@ -6,8 +6,8 @@ from scipy.ndimage.morphology import distance_transform_edt
 from sadic.algorithm.radius import find_max_radius_point_voxel
 from .utils import cartesian_to_grid, grid_to_cartesian
 
-sys.path.append("/home/giacomo/sadic/dev/cpp_tests/DGtalBind/build")
-import my_module
+# sys.path.append("/home/giacomo/sadic/dev/cpp_tests/DGtalBind/build")
+# import my_module
 
 def find_reference_radius(method, solid, atoms, **parameters):
     """
@@ -62,11 +62,11 @@ def basic_vectorized(solid, atoms, extreme_coordinates, resolution):
 
     return max_edt, dict()
 
-def coeurjolly_translated_sphere(solid, atoms, extreme_coordinates, resolution):
-    centers_indexes = cartesian_to_grid(atoms, extreme_coordinates, resolution)
+# def coeurjolly_translated_sphere(solid, atoms, extreme_coordinates, resolution):
+#     centers_indexes = cartesian_to_grid(atoms, extreme_coordinates, resolution)
 
-    max_edt = my_module.compute_max_distance(solid, centers_indexes)
+#     max_edt = my_module.compute_max_distance(solid, centers_indexes)
 
-    max_edt = max_edt * resolution
+#     max_edt = max_edt * resolution
 
-    return max_edt, dict()
+#     return max_edt, dict()

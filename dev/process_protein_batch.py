@@ -276,7 +276,7 @@ def process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose
         input_queue.put((pdb_id, idx))
 
     # Create a list of processes
-    processes = [mp.Process(target=queue_worker, args=(input_queue, output_queue, n_proteins, resolution, method, verbose)) for _ in range(num_processes)]
+    processes = [mp.Process(target=queue_worker, args=(input_queue, output_queue, n_proteins, resolution, method, experiment_folder, verbose)) for _ in range(num_processes)]
 
     # Start the processes
     for process in processes:
