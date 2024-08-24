@@ -30,4 +30,4 @@ def basic(solid):
 
     filled_voxels = final_voxels - original_voxels
 
-    return solid, dict(n_components=n_components, n_filled_voxels=filled_voxels, n_protein_int_volume=final_voxels)
+    return solid, dict(n_components=n_components, n_filled_voxels=filled_voxels, protein_int_volume=final_voxels)
