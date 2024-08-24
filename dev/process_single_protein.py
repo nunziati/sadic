@@ -97,9 +97,9 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
     space_fill_time_end = time.time()
 
     print_task("Removing holes")
-    hole_removal_time_start = time.time()
-    solid, complexity_variables_hole_removal = remove_holes(holes_removal_method, solid)
-    hole_removal_time_end = time.time()
+    holes_removal_time_start = time.time()
+    solid, complexity_variables_holes_removal = remove_holes(holes_removal_method, solid)
+    holes_removal_time_end = time.time()
 
     print_task("Finding reference radius")
     reference_radius_time_start = time.time()
@@ -119,7 +119,7 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
             alignment = time_align_end - time_align_start,
             discretization = discretization_time_end - discretization_time_start,
             space_fill = space_fill_time_end - space_fill_time_start,
-            hole_removal = hole_removal_time_end - hole_removal_time_start,
+            holes_removal = holes_removal_time_end - holes_removal_time_start,
             reference_radius = reference_radius_time_end - reference_radius_time_start,
             compute_indexes = compute_indexes_time_end - compute_indexes_time_start
         ),
@@ -129,7 +129,7 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
             "alignment": complexity_variables_alignment,
             "discretization": complexity_variables_discretization,
             "space_filling": complexity_variables_space_filling,
-            "hole_removal": complexity_variables_hole_removal,
+            "holes_removal": complexity_variables_holes_removal,
             "reference_radius": complexity_variables_reference_radius,
             "indexes_computation": complexity_variables_depth_indexes
         },
