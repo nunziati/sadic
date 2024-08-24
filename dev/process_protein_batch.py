@@ -127,6 +127,8 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
         os.makedirs(os.path.join(experiment_folder, "discretization", "voxel_operations_map"))
     if not os.path.exists(os.path.join(experiment_folder, "indexes_computation", "p")):
         os.makedirs(os.path.join(experiment_folder, "indexes_computation", "p"))
+    if not os.path.exists(os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map")):
+        os.makedirs(os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map"))
 
     p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
     p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
