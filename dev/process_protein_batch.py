@@ -119,6 +119,15 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
     p_idx_path = os.path.join(experiment_folder, "indexes_computation", "p", f"{pdb_id.strip()}.npy")
     idx_voxel_operations_map_path = os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map", f"{pdb_id.strip()}.npy")
 
+    if not os.path.exists(os.path.join(experiment_folder, "depth_indexes")):
+        os.makedirs(os.path.join(experiment_folder, "depth_indexes"))
+    if not os.path.exists(os.path.join(experiment_folder, "discretization", "p")):
+        os.makedirs(os.path.join(experiment_folder, "discretization", "p"))
+    if not os.path.exists(os.path.join(experiment_folder, "discretization", "voxel_operations_map")):
+        os.makedirs(os.path.join(experiment_folder, "discretization", "voxel_operations_map"))
+    if not os.path.exists(os.path.join(experiment_folder, "indexes_computation", "p")):
+        os.makedirs(os.path.join(experiment_folder, "indexes_computation", "p"))
+
     p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
     p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
 
@@ -332,6 +341,9 @@ def main():
     print("Start processing")
     output_file = process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, folder_path, num_processes)
     print("Finished processing")
+
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
 
     output_filename = os.path.join(folder_path, f"summary.csv")
     try:

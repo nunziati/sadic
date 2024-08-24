@@ -93,7 +93,7 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
     if fill_space_method != "none":
         solid, complexity_variables_space_filling = fill_space(discretization_method, solid, resolution=resolution, probe_radius=PDBEntity.vdw_radii['O'])
     else:
-        complexity_variables_1b = dict()
+        complexity_variables_space_filling = dict()
     space_fill_time_end = time.time()
 
     print_task("Removing holes")
