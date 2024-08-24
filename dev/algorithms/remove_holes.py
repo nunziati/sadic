@@ -8,14 +8,14 @@ def remove_holes(method, solid, **parameters):
     - complexity_variables: dict
     """
 
+    last_method = basic
+
     if method == "original":
         return original(solid)
     elif method == "basic":
         return basic(solid)
-    elif method == "basic_vectorized":
-        return basic(solid)
-    elif method == "translated_sphere_vectorized":
-        return basic(solid)
+    else:
+        return last_method(solid)
 
 def original(solid):
     solid.remove_holes()

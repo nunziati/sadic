@@ -19,6 +19,8 @@ def discretize(method, model, **parameters):
         return basic_vectorized(model, parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "translated_sphere_vectorized":
         return basic_vectorized(model, parameters["extreme_coordinates"], parameters["resolution"])
+    elif method == "coeurjolly_translated_sphere":
+        return basic_vectorized(model, parameters["extreme_coordinates"], parameters["resolution"])
 
 def original(model, resolution):
     solid = VoxelSolid(model, resolution=resolution)
