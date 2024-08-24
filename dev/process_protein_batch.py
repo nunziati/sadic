@@ -25,7 +25,7 @@ DEFAULT_VERBOSE = False
 DEFAULT_SUBSET = 1000
 DEFAULT_UNIFORM = True
 DEFAULT_RESUME = -1
-DEFAULT_NUM_PROCESSES = 4
+DEFAULT_NUM_PROCESSES = 8
 
 
 ############################## CONFIGURE METHODS ##############################
