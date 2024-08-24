@@ -18,7 +18,7 @@ np.random.seed(SEED)
 
 DEFAULT_INPUT = "proteins_dataset_PDB_with_protein_size.csv"
 DEFAULT_EXPERIMENT_FOLDER = "experiments"
-DEFAULT_EXPERIMENT_NAME = "old_unaligned"
+DEFAULT_EXPERIMENT_NAME = "aligned_spacefill_translated_sphere"
 DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = "translated_sphere_vectorized"
 DEFAULT_VERBOSE = False

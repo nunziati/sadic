@@ -126,14 +126,12 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
         complexity_variables = {
             "N": atoms.shape[0],
             "n": solid.shape[0] * solid.shape[1] * solid.shape[2],
-            "complexity_variables": {
-                "alignment": complexity_variables_alignment,
-                "discretization": complexity_variables_discretization,
-                "space_filling": complexity_variables_space_filling,
-                "hole_removal": complexity_variables_hole_removal,
-                "reference_radius": complexity_variables_reference_radius,
-                "depth_indexes": complexity_variables_depth_indexes
-            }
+            "alignment": complexity_variables_alignment,
+            "discretization": complexity_variables_discretization,
+            "space_filling": complexity_variables_space_filling,
+            "hole_removal": complexity_variables_hole_removal,
+            "reference_radius": complexity_variables_reference_radius,
+            "depth_indexes": complexity_variables_depth_indexes
         },
         reference_radius=reference_radius,
         solid=solid
