@@ -57,25 +57,25 @@ OUTPUT_FILE_HEADER = (
     "N",
     "n",
     "reference_radius",
-    "depth_indexes_path",
+    # "depth_indexes_path",
     "protein_int_volume_discretization",
     "protein_int_volume_space_fill",
     "connected_components",
     "protein_int_volume_holes_removal",
-    "p_disc_path",
+    # "p_disc_path",
     "p_disc_min",
     "p_disc_max",
     "p_disc_avg",
     "p_disc_med",
     "p_disc_std",
-    "disc_voxel_operations_map_path",
-    "p_idx_path",
+    # "disc_voxel_operations_map_path",
+    # "p_idx_path",
     "p_idx_min",
     "p_idx_max",
     "p_idx_avg",
     "p_idx_med",
     "p_idx_std",
-    "idx_voxel_operations_map_path",
+    #"idx_voxel_operations_map_path",
     )
 
 def parse_args():
@@ -133,10 +133,10 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
     p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
     p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
 
-    np.save(depth_indexes_path, output["result"])
-    np.save(p_disc_path, p_disc_array)
+    # np.save(depth_indexes_path, output["result"])
+    # np.save(p_disc_path, p_disc_array)
     # np.save(disc_voxel_operations_map_path, np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32))
-    np.save(p_idx_path, p_idx_array)
+    # np.save(p_idx_path, p_idx_array)
     # np.save(idx_voxel_operations_map_path, np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32))
 
     output_tuple = (
@@ -157,25 +157,25 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
         output["complexity_variables"]["N"],
         output["complexity_variables"]["n"],
         output["reference_radius"],
-        depth_indexes_path,
+        # depth_indexes_path,
         output["complexity_variables"]["discretization"]["protein_int_volume"],
         output["complexity_variables"]["space_filling"]["protein_int_volume"],
         output["complexity_variables"]["holes_removal"]["n_components"],
         output["complexity_variables"]["holes_removal"]["protein_int_volume"],
-        p_disc_path,
+        # p_disc_path,
         p_disc_array.min(),
         p_disc_array.max(),
         p_disc_array.mean(),
         np.median(p_disc_array),
         p_disc_array.std(),
-        disc_voxel_operations_map_path,
-        p_idx_path,
+        # disc_voxel_operations_map_path,
+        # p_idx_path,
         p_idx_array.min(),
         p_idx_array.max(),
         p_idx_array.mean(),
         np.median(p_idx_array),
         p_idx_array.std(),
-        idx_voxel_operations_map_path,
+        # idx_voxel_operations_map_path,
     )
     
     return output_tuple
@@ -236,6 +236,7 @@ def queue_worker(input_queue, output_queue, n_proteins, resolution, method, expe
         print(f"Processing protein {idx + 1}/{n_proteins}\n", end="\n")
         output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, experiment_folder=experiment_folder, verbose=verbose)
         output_queue.put(output_tuple)
+        print("Queue worker finished", idx + 1, end="\n")
 
 def process_protein_batch_scalar(pdb_ids, resolution, method, experiment_folder, verbose):
     output_file = [OUTPUT_FILE_HEADER]
@@ -287,8 +288,9 @@ def process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose
     # Get the results from the output queue
     results = []
     
-    for _ in range(n_proteins):
+    for i in range(n_proteins):
         results.append(output_queue.get())
+        print("Got result", i + 1, end="\n")
 
     # Wait for all processes to finish
     for idx, process in enumerate(processes):
