@@ -111,7 +111,7 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
         raise e
     except:
         print(f"Error processing protein {pdb_id.strip()}\n", end="\n")
-        return tuple([pdb_id.strip(), "ERROR"] + [None] * len(OUTPUT_FILE_HEADER) - 2)
+        return tuple([pdb_id.strip(), "ERROR"] + [None] * (len(OUTPUT_FILE_HEADER) - 2))
 
     depth_indexes_path = os.path.join(experiment_folder, "depth_indexes", f"{pdb_id.strip()}.npy")
     p_disc_path = os.path.join(experiment_folder, "discretization", "p", f"{pdb_id.strip()}.npy")
