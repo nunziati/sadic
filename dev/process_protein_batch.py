@@ -133,11 +133,11 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
     p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
     p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
 
-    # np.save(depth_indexes_path, output["result"])
-    # np.save(p_disc_path, p_disc_array)
-    # np.save(disc_voxel_operations_map_path, np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32))
-    # np.save(p_idx_path, p_idx_array)
-    # np.save(idx_voxel_operations_map_path, np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32))
+    np.save(depth_indexes_path, output["result"])
+    np.save(p_disc_path, p_disc_array)
+    np.save(disc_voxel_operations_map_path, np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32))
+    np.save(p_idx_path, p_idx_array)
+    np.save(idx_voxel_operations_map_path, np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32))
 
     output_tuple = (
         pdb_id.strip(),
@@ -231,11 +231,15 @@ def queue_worker(input_queue, output_queue, n_proteins, resolution, method, expe
             print(e)
             break
         except Exception as e:
+            # create an "exception" file
+            with open("exception.txt", "w") as f:
+                f.write("Error processing protein " + pdb_id + "with idx" + str(idx) + "\n")
+                f.write(str(e))
             raise e
 
         print(f"Processing protein {idx + 1}/{n_proteins}\n", end="\n")
         output_tuple = process_single_protein_and_extract_output(pdb_id, resolution=resolution, method=method, experiment_folder=experiment_folder, verbose=verbose)
-        output_queue.put(output_tuple)
+        output_queue.put((idx, output_tuple))
         print("Queue worker finished", idx + 1, end="\n")
 
 def process_protein_batch_scalar(pdb_ids, resolution, method, experiment_folder, verbose):
@@ -288,9 +292,10 @@ def process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose
     # Get the results from the output queue
     results = []
     
-    for i in range(n_proteins):
-        results.append(output_queue.get())
-        print("Got result", i + 1, end="\n")
+    for _ in range(n_proteins):
+        output, idx = output_queue.get()
+        print("Got result", idx + 1, end="\n")
+        results.append(output)
 
     # Wait for all processes to finish
     for idx, process in enumerate(processes):
