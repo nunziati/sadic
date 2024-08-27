@@ -220,8 +220,8 @@ def pick_uniform_tuples(tuples_list, N):
     
     return selected_tuples
 
-def sublist_worker(sublist, resolution, method, verbose):
-    return process_protein_batch(sublist, resolution, method, verbose)
+def sublist_worker(sublist, resolution, method, experiment_folder, verbose):
+    return process_protein_batch(sublist, resolution, method, experiment_folder, verbose)
 
 def queue_worker(input_queue, output_queue, n_proteins, resolution, method, experiment_folder, verbose):
     while not input_queue.empty():
@@ -255,14 +255,14 @@ def process_protein_batch_scalar(pdb_ids, resolution, method, experiment_folder,
     return output_file
 
 
-def process_protein_batch_in_parallel_sublists(pdb_ids, resolution, method, verbose, num_processes):
+def process_protein_batch_in_parallel_sublists(pdb_ids, resolution, method, verbose, experiment_folder, num_processes):
     # Split the pdb_ids into sublists for each process
     sublists = [pdb_ids[i::num_processes] for i in range(num_processes)]
     
     # Create a multiprocessing pool
     with mp.Pool(processes=num_processes) as pool:
         # Use starmap to pass multiple arguments to the worker function
-        results = pool.starmap(sublist_worker, [(sublist, resolution, method, verbose) for sublist in sublists])
+        results = pool.starmap(sublist_worker, [(sublist, resolution, method, experiment_folder, verbose) for sublist in sublists])
     
     # Merge the results from all processes
     merged_results = [item for sublist in results for item in sublist[1:]]
@@ -348,7 +348,7 @@ def main():
     pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
 
     print("Start processing")
-    output_file = process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, folder_path, num_processes)
+    output_file = process_protein_batch_in_parallel_sublists(pdb_ids, resolution, method, verbose, folder_path, num_processes)
     print("Finished processing")
 
     if not os.path.exists(folder_path):
