@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.ndimage import binary_closing
-from skimage.morphology import ball, closing, reconstruction, erosion
+from scipy.ndimage import binary_closing as binary_closing_scipy
+from skimage.morphology import ball, binary_closing, reconstruction, erosion
 
 def fill_space(method, solid, **parameters):
     """
@@ -42,7 +42,7 @@ def scipy(solid, resolution, probe_radius):
     structuring_element = create_spherical_structuring_element(int(probe_radius / resolution))
 
     # Fill the space
-    solid = binary_closing(solid, structure=structuring_element)
+    solid = binary_closing_scipy(solid, structure=structuring_element)
 
     protein_int_volume = np.sum(solid)
 
@@ -50,10 +50,10 @@ def scipy(solid, resolution, probe_radius):
 
 def skimage(solid, resolution, probe_radius):
     # Create the spherical structuring element
-    structuring_element = ball(int(probe_radius / resolution))
+    structuring_element = ball(np.ceil(probe_radius / resolution)+1)
 
     # Fill the space
-    solid = closing(solid, structuring_element)
+    solid = binary_closing(solid, structuring_element)
 
     protein_int_volume = np.sum(solid)
 

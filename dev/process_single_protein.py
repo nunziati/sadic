@@ -16,8 +16,8 @@ from algorithms.compute_indexes import compute_indexes
 
 from mylogging import TaskPrinter
 
-DEFAULT_INPUT = "1ubq"
-DEFAULT_RESOLUTION = 0.5
+DEFAULT_INPUT = "5d98"
+DEFAULT_RESOLUTION = 0.35
 DEFAULT_METHOD = None # "basic_vectorized"
 DEFAULT_VERBOSE = True
 
@@ -34,7 +34,7 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
         single_methods = dict(
             alignment_method = "basic",
             discretization_method = "basic_vectorized" if method is None else method,
-            fill_space_method = "none",
+            fill_space_method = "skimage",
             holes_removal_method = "basic_vectorized" if method is None else method,
             reference_radius_method = "basic_vectorized" if method is None else method,
             indexes_computation_method = "translated_sphere_vectorized"
@@ -91,7 +91,7 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
     print_task("Space filling")
     space_fill_time_start = time.time()
     if fill_space_method != "none":
-        solid, complexity_variables_space_filling = fill_space(discretization_method, solid, resolution=resolution, probe_radius=PDBEntity.vdw_radii['O'])
+        solid, complexity_variables_space_filling = fill_space(fill_space_method, solid, resolution=resolution, probe_radius=PDBEntity.vdw_radii['O'])
     else:
         complexity_variables_space_filling = dict()
     space_fill_time_end = time.time()
@@ -152,6 +152,12 @@ def main():
     print("N:", output["complexity_variables"]["N"])
     print("Solid volume", np.sum(output["solid"]))
     print("Reference radius:", output["reference_radius"])
+
+    print(output["complexity_variables"]["discretization"]["protein_int_volume"])
+    print(output["complexity_variables"]["space_filling"]["protein_int_volume"])
+    print(output["complexity_variables"]["holes_removal"]["n_components"])
+    print(output["complexity_variables"]["holes_removal"]["protein_int_volume"])
+
     image = output["complexity_variables"]["4"]["voxel_operations_map"]
     p_list = output["complexity_variables"]["4"]["p_list"]
     p_max = np.max(p_list)

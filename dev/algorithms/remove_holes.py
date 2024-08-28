@@ -26,6 +26,7 @@ def basic(solid):
     original_voxels = np.sum(solid)
     connected_components, n_components = label(solid)
     solid = (connected_components != 0).astype(np.int32)
+    
     final_voxels = np.sum(solid)
 
     filled_voxels = final_voxels - original_voxels

@@ -82,7 +82,7 @@ plots = [
     ("n", "p_idx_max"),
 ]
 
-"""for plot in plots:
+for plot in plots:
     df = df.sort_values(by=plot[0])
     if plot[0] == "n":
         df.plot(x=plot[0], y=plot[1], kind="scatter", title=f"{plot[0]} vs {plot[1]}", xlim=(0, 1e8))
@@ -94,7 +94,7 @@ df.plot(x="N", ylim=(-1, 20), y=["t_alignment", "t_discretization", "t_fill_spac
 
 df = df.sort_values(by="n")
 df.plot(x="n", ylim=(-1, 20), y=["t_alignment", "t_discretization", "t_fill_space", "t_holes_removal", "t_reference_radius", "t_indexes_computation"], kind="line", title="Time vs n")
-"""
+
 
 df["N*p_max/n"].plot(kind="hist", title="N*p_max/n distribution")
 df["N*p_avg/n"].plot(kind="hist", title="N*p_avg/n distribution")
