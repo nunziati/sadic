@@ -161,7 +161,7 @@ def main():
     print("N*p_avg:", N_p_avg)
 
     # Average è esprimibile come percentuale del numero di atomi?
-    # N*p_max/n è una costante?
+    # N*p_max/n è una costante?............................................FATTO
     # Average è una costante?
     
     voxel_centers = np.argwhere(image)

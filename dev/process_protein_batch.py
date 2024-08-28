@@ -16,7 +16,7 @@ SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
 
-DEFAULT_INPUT = "proteins_dataset_PDB_with_protein_size.csv"
+DEFAULT_INPUT = "protein_sample.txt"
 DEFAULT_EXPERIMENT_FOLDER = "experiments"
 DEFAULT_EXPERIMENT_NAME = "aligned_spacefill_translated_sphere"
 DEFAULT_RESOLUTION = 0.5
@@ -57,25 +57,27 @@ OUTPUT_FILE_HEADER = (
     "N",
     "n",
     "reference_radius",
-    # "depth_indexes_path",
     "protein_int_volume_discretization",
     "protein_int_volume_space_fill",
     "connected_components",
     "protein_int_volume_holes_removal",
-    # "p_disc_path",
     "p_disc_min",
     "p_disc_max",
     "p_disc_avg",
     "p_disc_med",
     "p_disc_std",
-    # "disc_voxel_operations_map_path",
-    # "p_idx_path",
     "p_idx_min",
     "p_idx_max",
     "p_idx_avg",
     "p_idx_med",
     "p_idx_std",
-    #"idx_voxel_operations_map_path",
+    "N*p_idx_max/n",
+    "N*p_idx_avg/n",
+    "idx_visited_voxels",
+    "max_idx_visited_voxel_map",
+    "min_idx_visited_voxel_map",
+    "avg_idx_visited_voxel_map",
+    "std_idx_visited_voxel_map"
     )
 
 def parse_args():
@@ -133,11 +135,17 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
     p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
     p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
 
+    disc_voxel_operations_map = np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32)
+    idx_voxel_operations_map = np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32)
+    
     np.save(depth_indexes_path, output["result"])
     np.save(p_disc_path, p_disc_array)
-    np.save(disc_voxel_operations_map_path, np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32))
+    np.save(disc_voxel_operations_map_path, disc_voxel_operations_map)
     np.save(p_idx_path, p_idx_array)
-    np.save(idx_voxel_operations_map_path, np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32))
+    np.save(idx_voxel_operations_map_path, idx_voxel_operations_map)
+
+    idx_voxel_centers = np.argwhere(idx_voxel_operations_map)
+    values = idx_voxel_operations_map[idx_voxel_centers[:, 0], idx_voxel_centers[:, 1], idx_voxel_centers[:, 2]]
 
     output_tuple = (
         pdb_id.strip(),
@@ -157,25 +165,27 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
         output["complexity_variables"]["N"],
         output["complexity_variables"]["n"],
         output["reference_radius"],
-        # depth_indexes_path,
         output["complexity_variables"]["discretization"]["protein_int_volume"],
         output["complexity_variables"]["space_filling"]["protein_int_volume"],
         output["complexity_variables"]["holes_removal"]["n_components"],
         output["complexity_variables"]["holes_removal"]["protein_int_volume"],
-        # p_disc_path,
         p_disc_array.min(),
         p_disc_array.max(),
         p_disc_array.mean(),
         np.median(p_disc_array),
         p_disc_array.std(),
-        # disc_voxel_operations_map_path,
-        # p_idx_path,
         p_idx_array.min(),
         p_idx_array.max(),
         p_idx_array.mean(),
         np.median(p_idx_array),
         p_idx_array.std(),
-        # idx_voxel_operations_map_path,
+        output["complexity_variables"]["N"] * p_idx_array.max() / output["complexity_variables"]["n"],
+        output["complexity_variables"]["N"] * p_idx_array.mean() / output["complexity_variables"]["n"],
+        len(values),
+        values.max(),
+        values.min(),
+        values.mean(),
+        values.std()
     )
     
     return output_tuple
@@ -197,7 +207,7 @@ def process_protein_batch(pdb_ids, resolution=0.3, method=None, experiment_folde
 
 def pick_uniform_tuples(tuples_list, N):
     # Sort the tuples by the second element
-    sorted_tuples = sorted(tuples_list, key=lambda x: x[1])
+    sorted_tuples = sorted(set(tuples_list), key=lambda x: x[1])
 
     # Extract the second elements and calculate the empirical CDF
     second_elements = np.array([y for _, y in sorted_tuples])
@@ -265,12 +275,12 @@ def process_protein_batch_in_parallel_sublists(pdb_ids, resolution, method, verb
         results = pool.starmap(sublist_worker, [(sublist, resolution, method, experiment_folder, verbose) for sublist in sublists])
     
     # Merge the results from all processes
-    merged_results = [item for sublist in results for item in sublist[1:]]
+    merged_results = [item for sublist in results for item in sublist]
     
     output_file = [OUTPUT_FILE_HEADER]
     output_file += merged_results
 
-    return merged_results
+    return output_file
 
 def process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, verbose, experiment_folder, num_processes):
     input_queue = mp.Queue()
@@ -322,18 +332,18 @@ def main():
 
     folder_path = os.path.join(experiment_folder, experiment_name)
 
-    # read the input csv file as a list of (pdb_id, atom_count)
-    with open(input_arg, "r") as f:
-        all_pdb_ids = list(csv.reader(f))[1:]
+    # # read the input csv file as a list of (pdb_id, atom_count)
+    # with open(input_arg, "r") as f:
+    #     all_pdb_ids = list(csv.reader(f))[1:]
 
-    all_pdb_ids = [(pdb_id, int(atom_count)) for pdb_id, atom_count in all_pdb_ids]
+    # all_pdb_ids = [(pdb_id, int(atom_count)) for pdb_id, atom_count in all_pdb_ids]
 
-    if protein_subset == -1:
-        pdb_ids = all_pdb_ids
-    elif not sample_uniformly:
-        pdb_ids = random.sample(all_pdb_ids, protein_subset)
-    else:
-        pdb_ids = pick_uniform_tuples(all_pdb_ids, protein_subset)
+    # if protein_subset == -1:
+    #     pdb_ids = all_pdb_ids
+    # elif not sample_uniformly:
+    #     pdb_ids = random.sample(all_pdb_ids, protein_subset)
+    # else:
+    #     pdb_ids = pick_uniform_tuples(all_pdb_ids, protein_subset)
 
     # UNCOMMENT TO VISUALIZE THE ATOM COUNT DISTRIBUTION
     # atom_numbers = [pdb_id[1] for pdb_id in pdb_ids]
@@ -345,7 +355,11 @@ def main():
     # plt.title("Distribution of atom numbers")
     # plt.show()
     
-    pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
+    # pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
+
+    # Read the pdb_ids from the file "protein_sample.txt"
+    with open(input_arg, "r") as f:
+        pdb_ids = f.readlines()
 
     print("Start processing")
     output_file = process_protein_batch_in_parallel_sublists(pdb_ids, resolution, method, verbose, folder_path, num_processes)
