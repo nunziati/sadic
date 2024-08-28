@@ -49,11 +49,28 @@ def scipy(solid, resolution, probe_radius):
     return solid, dict(protein_int_volume=protein_int_volume)
 
 def skimage(solid, resolution, probe_radius):
+    # from skimage.morphology import disk
+    # import open3d as o3d
+
     # Create the spherical structuring element
-    structuring_element = ball(np.ceil(probe_radius / resolution)+1)
+    structuring_element = ball(np.ceil(probe_radius / resolution))
+
+    # Plot the solid vefore closing, using open3d
+    # voxel_centers = np.argwhere(solid)
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(voxel_centers)
+    # # pcd.colors = o3d.utility.Vector3dVector(colors)
+    # o3d.visualization.draw_geometries([pcd])
 
     # Fill the space
     solid = binary_closing(solid, structuring_element)
+
+    # # Plot the solid after closing, using open3d
+    # voxel_centers = np.argwhere(solid)
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(voxel_centers)
+    # # pcd.colors = o3d.utility.Vector3dVector(colors)
+    # o3d.visualization.draw_geometries([pcd])
 
     protein_int_volume = np.sum(solid)
 

@@ -17,7 +17,7 @@ from algorithms.compute_indexes import compute_indexes
 from mylogging import TaskPrinter
 
 DEFAULT_INPUT = "5d98"
-DEFAULT_RESOLUTION = 0.35
+DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = None # "basic_vectorized"
 DEFAULT_VERBOSE = True
 
@@ -93,7 +93,7 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
     if fill_space_method != "none":
         solid, complexity_variables_space_filling = fill_space(fill_space_method, solid, resolution=resolution, probe_radius=PDBEntity.vdw_radii['O'])
     else:
-        complexity_variables_space_filling = dict()
+        complexity_variables_space_filling = dict(protein_int_volume=complexity_variables_discretization["protein_int_volume"])
     space_fill_time_end = time.time()
 
     print_task("Removing holes")

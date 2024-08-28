@@ -23,13 +23,43 @@ def original(solid):
     return solid, dict()
 
 def basic(solid):
+    # import open3d as o3d
+
     original_voxels = np.sum(solid)
-    connected_components, n_components = label(solid)
+    connected_components, n_components = label(1 - solid)
+
+    solid = (connected_components != 1).astype(np.int32)
     
-    solid = (connected_components != 0).astype(np.int32)
-    
+    # holes = connected_components * (np.logical_and(connected_components != 0, connected_components != 1))
+
+    # voxel_centers = np.argwhere(holes)
+    # values = holes[voxel_centers[:, 0], voxel_centers[:, 1], voxel_centers[:, 2]]
+
+    # # Normalize the values to be between 0 and 1
+    # normalized_values = (values - values.min()) / (values.max() - values.min())
+
+    # # Map normalized values to colors (from blue to red)
+    # colors = np.zeros((voxel_centers.shape[0], 3))
+    # colors[:, 0] = normalized_values  # Red channel
+    # colors[:, 2] = 1 - normalized_values  # Blue channel
+
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(voxel_centers)
+    # pcd.colors = o3d.utility.Vector3dVector(colors)
+    # o3d.visualization.draw_geometries([pcd])
+
+    # voxel_centers = np.argwhere(solid)
+
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(voxel_centers)
+    # o3d.visualization.draw_geometries([pcd])
+
     final_voxels = np.sum(solid)
 
     filled_voxels = final_voxels - original_voxels
+
+    # print(f"Original voxels: {original_voxels}")
+    # print(f"Final voxels: {final_voxels}")
+    # print(f"Filled voxels: {filled_voxels}")
 
     return solid, dict(n_components=n_components, n_filled_voxels=filled_voxels, protein_int_volume=final_voxels)
