@@ -338,6 +338,37 @@ def kd_trees_sklearn(solid, centers, reference_radius, extreme_coordinates, reso
 
     return depth_idx, dict()
 
+def kd_trees_scipy_tree_comparison(solid, centers, reference_radius, extreme_coordinates, resolution):
+    print("wow1", flush=True)
+    sq_reference_radius = reference_radius ** 2
+    sphere_grid_radius = ((2 * reference_radius / resolution) // 2).astype(np.int32)
+    sphere_grid_diameter = sphere_grid_radius * 2 + 1
+    grid_origin = np.array([sphere_grid_diameter // 2, sphere_grid_diameter // 2, sphere_grid_diameter // 2], dtype=np.int32)
+    sphere_box = np.empty((sphere_grid_diameter, sphere_grid_diameter, sphere_grid_diameter), dtype=np.int32)
+    cartesian_origin = grid_to_cartesian(grid_origin, extreme_coordinates, resolution)
+    sphere_grid_points = get_all_coordinate_indexes(sphere_box)
+    sphere_cartesian_points = grid_to_cartesian(sphere_grid_points, extreme_coordinates, resolution)
+    sphere_box = np.where(cdist(sphere_cartesian_points, cartesian_origin.reshape(-1, 3), metric="sqeuclidean") <= sq_reference_radius, 1, 0).reshape((sphere_grid_diameter, sphere_grid_diameter, sphere_grid_diameter))
+    sphere_int_volume = np.count_nonzero(sphere_box)
+    print("wow2", flush=True)
+
+    count = np.empty(centers.shape[0], dtype=np.int32)
+
+    solid_points = np.array(np.nonzero(solid)).T
+    grid_centers = cartesian_to_grid(centers, extreme_coordinates, resolution)
+    kdtree = KDTree(solid_points, leafsize=200)
+    query_kdtree = KDTree(centers, leafsize=40)
+    print("wow3", flush=True)
+    
+    results = query_kdtree.query_ball_tree(kdtree, sphere_grid_radius)
+
+    for idx, result in enumerate(results):
+        count[idx] = len(result)
+
+    depth_idx = 2 * (1 - count / sphere_int_volume)
+
+    return depth_idx, dict()
+
 def kd_trees_voxel_scan_loop(solid, centers, reference_radius, extreme_coordinates, resolution):
     print("wow1", flush=True)
     sq_reference_radius = reference_radius ** 2
