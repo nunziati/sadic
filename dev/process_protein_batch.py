@@ -108,87 +108,92 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
                                         "reference_radius_method": REFERENCE_RADIUS_METHOD,
                                         "indexes_computation_method": INDEXES_COMPUTATION_METHOD
                                  })
+        
+        depth_indexes_path = os.path.join(experiment_folder, "depth_indexes", f"{pdb_id.strip()}.npy")
+        p_disc_path = os.path.join(experiment_folder, "discretization", "p", f"{pdb_id.strip()}.npy")
+        disc_voxel_operations_map_path = os.path.join(experiment_folder, "discretization", "voxel_operations_map", f"{pdb_id.strip()}.npy")
+        p_idx_path = os.path.join(experiment_folder, "indexes_computation", "p", f"{pdb_id.strip()}.npy")
+        idx_voxel_operations_map_path = os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map", f"{pdb_id.strip()}.npy")
+
+        if not os.path.exists(os.path.join(experiment_folder, "depth_indexes")):
+            os.makedirs(os.path.join(experiment_folder, "depth_indexes"))
+        if not os.path.exists(os.path.join(experiment_folder, "discretization", "p")):
+            os.makedirs(os.path.join(experiment_folder, "discretization", "p"))
+        if not os.path.exists(os.path.join(experiment_folder, "discretization", "voxel_operations_map")):
+            os.makedirs(os.path.join(experiment_folder, "discretization", "voxel_operations_map"))
+        if not os.path.exists(os.path.join(experiment_folder, "indexes_computation", "p")):
+            os.makedirs(os.path.join(experiment_folder, "indexes_computation", "p"))
+        if not os.path.exists(os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map")):
+            os.makedirs(os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map"))
+
+        p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
+        p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
+
+        disc_voxel_operations_map = np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32)
+        idx_voxel_operations_map = np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32)
+        
+        np.save(depth_indexes_path, output["result"])
+        np.save(p_disc_path, p_disc_array)
+        np.save(disc_voxel_operations_map_path, disc_voxel_operations_map)
+        np.save(p_idx_path, p_idx_array)
+        np.save(idx_voxel_operations_map_path, idx_voxel_operations_map)
+
+        idx_voxel_centers = np.argwhere(idx_voxel_operations_map)
+        values = idx_voxel_operations_map[idx_voxel_centers[:, 0], idx_voxel_centers[:, 1], idx_voxel_centers[:, 2]]
+
+        output_tuple = (
+            pdb_id.strip(),
+            resolution,
+            ALIGNMENT_METHOD,
+            DISCRETIZATION_METHOD,
+            FILL_SPACE_METHOD,
+            HOLES_REMOVAL_METHOD,
+            REFERENCE_RADIUS_METHOD,
+            INDEXES_COMPUTATION_METHOD,
+            output["times"]["alignment"],
+            output["times"]["discretization"],
+            output["times"]["space_fill"],
+            output["times"]["holes_removal"],
+            output["times"]["reference_radius"],
+            output["times"]["compute_indexes"],
+            output["complexity_variables"]["N"],
+            output["complexity_variables"]["n"],
+            output["reference_radius"],
+            output["complexity_variables"]["discretization"]["protein_int_volume"],
+            output["complexity_variables"]["space_filling"]["protein_int_volume"],
+            output["complexity_variables"]["holes_removal"]["n_components"],
+            output["complexity_variables"]["holes_removal"]["protein_int_volume"],
+            p_disc_array.min(),
+            p_disc_array.max(),
+            p_disc_array.mean(),
+            np.median(p_disc_array),
+            p_disc_array.std(),
+            p_idx_array.min(),
+            p_idx_array.max(),
+            p_idx_array.mean(),
+            np.median(p_idx_array),
+            p_idx_array.std(),
+            output["complexity_variables"]["N"] * p_idx_array.max() / output["complexity_variables"]["n"],
+            output["complexity_variables"]["N"] * p_idx_array.mean() / output["complexity_variables"]["n"],
+            len(values),
+            values.max(),
+            values.min(),
+            values.mean(),
+            values.std()
+        )
+        
+        return output_tuple
+
     except KeyboardInterrupt as e:
         print("Interrupted by the user\n", end="\n")
         raise e
-    except:
+    except Exception as e:
+        # Save the exception log in a log file in the experiment folder
+        with open(os.path.join(experiment_folder, "exception.txt"), "a") as f:
+            f.write("Error processing protein " + pdb_id.strip() + "\n")
+            f.write(str(e) + "\n")
         print(f"Error processing protein {pdb_id.strip()}\n", end="\n")
         return tuple([pdb_id.strip(), "ERROR"] + [None] * (len(OUTPUT_FILE_HEADER) - 2))
-
-    depth_indexes_path = os.path.join(experiment_folder, "depth_indexes", f"{pdb_id.strip()}.npy")
-    p_disc_path = os.path.join(experiment_folder, "discretization", "p", f"{pdb_id.strip()}.npy")
-    disc_voxel_operations_map_path = os.path.join(experiment_folder, "discretization", "voxel_operations_map", f"{pdb_id.strip()}.npy")
-    p_idx_path = os.path.join(experiment_folder, "indexes_computation", "p", f"{pdb_id.strip()}.npy")
-    idx_voxel_operations_map_path = os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map", f"{pdb_id.strip()}.npy")
-
-    if not os.path.exists(os.path.join(experiment_folder, "depth_indexes")):
-        os.makedirs(os.path.join(experiment_folder, "depth_indexes"))
-    if not os.path.exists(os.path.join(experiment_folder, "discretization", "p")):
-        os.makedirs(os.path.join(experiment_folder, "discretization", "p"))
-    if not os.path.exists(os.path.join(experiment_folder, "discretization", "voxel_operations_map")):
-        os.makedirs(os.path.join(experiment_folder, "discretization", "voxel_operations_map"))
-    if not os.path.exists(os.path.join(experiment_folder, "indexes_computation", "p")):
-        os.makedirs(os.path.join(experiment_folder, "indexes_computation", "p"))
-    if not os.path.exists(os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map")):
-        os.makedirs(os.path.join(experiment_folder, "indexes_computation", "voxel_operations_map"))
-
-    p_disc_array = np.array(output["complexity_variables"]["discretization"]["p_list"], dtype=np.int32)
-    p_idx_array = np.array(output["complexity_variables"]["indexes_computation"]["p_list"], dtype=np.int32)
-
-    disc_voxel_operations_map = np.array(output["complexity_variables"]["discretization"]["visit_map"], dtype=np.int32)
-    idx_voxel_operations_map = np.array(output["complexity_variables"]["indexes_computation"]["voxel_operations_map"], dtype=np.int32)
-    
-    np.save(depth_indexes_path, output["result"])
-    np.save(p_disc_path, p_disc_array)
-    np.save(disc_voxel_operations_map_path, disc_voxel_operations_map)
-    np.save(p_idx_path, p_idx_array)
-    np.save(idx_voxel_operations_map_path, idx_voxel_operations_map)
-
-    idx_voxel_centers = np.argwhere(idx_voxel_operations_map)
-    values = idx_voxel_operations_map[idx_voxel_centers[:, 0], idx_voxel_centers[:, 1], idx_voxel_centers[:, 2]]
-
-    output_tuple = (
-        pdb_id.strip(),
-        resolution,
-        ALIGNMENT_METHOD,
-        DISCRETIZATION_METHOD,
-        FILL_SPACE_METHOD,
-        HOLES_REMOVAL_METHOD,
-        REFERENCE_RADIUS_METHOD,
-        INDEXES_COMPUTATION_METHOD,
-        output["times"]["alignment"],
-        output["times"]["discretization"],
-        output["times"]["space_fill"],
-        output["times"]["holes_removal"],
-        output["times"]["reference_radius"],
-        output["times"]["compute_indexes"],
-        output["complexity_variables"]["N"],
-        output["complexity_variables"]["n"],
-        output["reference_radius"],
-        output["complexity_variables"]["discretization"]["protein_int_volume"],
-        output["complexity_variables"]["space_filling"]["protein_int_volume"],
-        output["complexity_variables"]["holes_removal"]["n_components"],
-        output["complexity_variables"]["holes_removal"]["protein_int_volume"],
-        p_disc_array.min(),
-        p_disc_array.max(),
-        p_disc_array.mean(),
-        np.median(p_disc_array),
-        p_disc_array.std(),
-        p_idx_array.min(),
-        p_idx_array.max(),
-        p_idx_array.mean(),
-        np.median(p_idx_array),
-        p_idx_array.std(),
-        output["complexity_variables"]["N"] * p_idx_array.max() / output["complexity_variables"]["n"],
-        output["complexity_variables"]["N"] * p_idx_array.mean() / output["complexity_variables"]["n"],
-        len(values),
-        values.max(),
-        values.min(),
-        values.mean(),
-        values.std()
-    )
-    
-    return output_tuple
 
 def process_protein_batch(pdb_ids, resolution=0.3, method=None, experiment_folder="", verbose=True):
     if experiment_folder == "":
