@@ -26,7 +26,12 @@ def basic(solid):
     # import open3d as o3d
 
     original_voxels = np.sum(solid)
+    
     connected_components, n_components = label(1 - solid)
+
+    # for i in range(1, n_components + 1):
+    #     count = np.sum(connected_components == i)
+    #     print(f"Component {i}: {count} voxels")
 
     solid = (connected_components != 1).astype(np.int32)
     
@@ -58,6 +63,7 @@ def basic(solid):
 
     filled_voxels = final_voxels - original_voxels
 
+    # print(f"Connected components: {n_components}")
     # print(f"Original voxels: {original_voxels}")
     # print(f"Final voxels: {final_voxels}")
     # print(f"Filled voxels: {filled_voxels}")

@@ -16,7 +16,7 @@ from algorithms.compute_indexes import compute_indexes
 
 from mylogging import TaskPrinter
 
-DEFAULT_INPUT = "5d98"
+DEFAULT_INPUT = "3cmv"
 DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = None # "basic_vectorized"
 DEFAULT_VERBOSE = True
