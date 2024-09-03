@@ -369,7 +369,7 @@ def main():
     os.makedirs(folder_path)
                              
     print("Start processing")
-    output_file = process_protein_batch_in_parallel_sublists(pdb_ids, resolution, method, verbose, folder_path, num_processes)
+    output_file = process_protein_batch_scalar(pdb_ids, resolution, method, verbose, folder_path) # , num_processes)
     print("Finished processing")
 
     if not os.path.exists(folder_path):
