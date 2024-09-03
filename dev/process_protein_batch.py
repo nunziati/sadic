@@ -25,7 +25,7 @@ DEFAULT_VERBOSE = False
 DEFAULT_SUBSET = 1000
 DEFAULT_UNIFORM = True
 DEFAULT_RESUME = -1
-DEFAULT_NUM_PROCESSES = 8
+DEFAULT_NUM_PROCESSES = 2
 
 
 ############################## CONFIGURE METHODS ##############################
@@ -369,7 +369,7 @@ def main():
     os.makedirs(folder_path)
                              
     print("Start processing")
-    output_file = process_protein_batch_scalar(pdb_ids, resolution, method, verbose, folder_path) # , num_processes)
+    output_file = process_protein_batch_in_parallel_queue(pdb_ids, resolution, method, folder_path, verbose, num_processes)
     print("Finished processing")
 
     if not os.path.exists(folder_path):
