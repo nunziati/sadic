@@ -167,8 +167,23 @@ def main():
     print("N*p_avg:", N_p_avg)
 
     # Average è esprimibile come percentuale del numero di atomi?
-    # N*p_max/n è una costante?............................................FATTO
+    # N*p_max/n è una costante?
     # Average è una costante?
+
+
+    # DA FARE
+    # nel metodo morfologico: mettere arrotondamento e verificare se cambia qualcosa
+
+    # rifare metodo morfologico+traslata mettendo arrotondamento con risoluzione 0.5 e 0.35
+    # metodo morfologico con risoluzione 0.5
+    # metodo sfera traslata con risoluione 0.5 e 0.35
+    # metodo vecchio con risoluzione 0.5
+
+    # capire se gli indici sono corretti con il metodo della sfera traslata
+    # capire se gli indici sono corretti con il metodo morfologico
+    # tirare fuori un sample piccolo di proteine (30) da far girare con ResidueDepth
+    
+    # implementare roba rimanente con kdtree
     
     voxel_centers = np.argwhere(image)
 

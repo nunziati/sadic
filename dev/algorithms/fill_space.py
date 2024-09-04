@@ -60,7 +60,7 @@ def skimage(solid, resolution, probe_radius):
     # print(f"Number of components: {n_components}")
 
     # Create the spherical structuring element
-    structuring_element = ball(np.floor(probe_radius / resolution))
+    structuring_element = ball(np.round(probe_radius / resolution))
 
     structuring_element[:,:,:] = 1
 
