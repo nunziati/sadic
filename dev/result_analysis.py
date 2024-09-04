@@ -36,29 +36,28 @@ OUTPUT_FILE_HEADER = (
     "N",
     "n",
     "reference_radius",
-    # "depth_indexes_path",
     "protein_int_volume_discretization",
     "protein_int_volume_space_fill",
     "connected_components",
     "protein_int_volume_holes_removal",
-    # "p_disc_path",
     "p_disc_min",
     "p_disc_max",
     "p_disc_avg",
     "p_disc_med",
     "p_disc_std",
-    # "disc_voxel_operations_map_path",
-    # "p_idx_path",
     "p_idx_min",
     "p_idx_max",
     "p_idx_avg",
     "p_idx_med",
     "p_idx_std",
-    #"idx_voxel_operations_map_path",
+    "N*p_idx_max/n",
+    "N*p_idx_avg/n",
+    "idx_visited_voxels",
+    "max_idx_visited_voxel_map",
+    "min_idx_visited_voxel_map",
+    "avg_idx_visited_voxel_map",
+    "std_idx_visited_voxel_map"
     )
-
-df["N*p_max/n"] = df["N"] * df["p_idx_max"] / df["n"]
-df["N*p_avg/n"] = df["N"] * df["p_idx_avg"] / df["n"]
 
 plots = [
     ("N", "n"),
@@ -82,21 +81,20 @@ plots = [
     ("n", "p_idx_max"),
 ]
 
+df["N*p_idx_max/n"].plot(kind="hist", title="N*p_max/n distribution")
+df["N*p_idx_avg/n"].plot(kind="hist", title="N*p_avg/n distribution")
+
 for plot in plots:
     df = df.sort_values(by=plot[0])
     if plot[0] == "n":
-        df.plot(x=plot[0], y=plot[1], kind="scatter", title=f"{plot[0]} vs {plot[1]}", xlim=(0, 1e8))
+        df.plot(x=plot[0], y=plot[1], kind="scatter", title=f"{plot[0]} vs {plot[1]}")
     else:
         df.plot(x=plot[0], y=plot[1], kind="scatter", title=f"{plot[0]} vs {plot[1]}")
 
 df = df.sort_values(by="N")
-df.plot(x="N", ylim=(-1, 20), y=["t_alignment", "t_discretization", "t_fill_space", "t_holes_removal", "t_reference_radius", "t_indexes_computation"], kind="line", title="Time vs N")
+df.plot(x="N", y=["t_alignment", "t_discretization", "t_fill_space", "t_holes_removal", "t_reference_radius", "t_indexes_computation"], kind="line", title="Time vs N")
 
 df = df.sort_values(by="n")
-df.plot(x="n", ylim=(-1, 20), y=["t_alignment", "t_discretization", "t_fill_space", "t_holes_removal", "t_reference_radius", "t_indexes_computation"], kind="line", title="Time vs n")
-
-
-df["N*p_max/n"].plot(kind="hist", title="N*p_max/n distribution")
-df["N*p_avg/n"].plot(kind="hist", title="N*p_avg/n distribution")
+df.plot(x="n", y=["t_alignment", "t_discretization", "t_fill_space", "t_holes_removal", "t_reference_radius", "t_indexes_computation"], kind="line", title="Time vs n")
 
 plt.show()
