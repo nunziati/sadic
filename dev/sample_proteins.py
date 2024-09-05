@@ -6,7 +6,7 @@ input_arg = "proteins_dataset_PDB_with_protein_size.csv"
 protein_subset = 1000
 
 def pick_uniform_tuples(tuples_list, N):
-    elements_dict = {x: y for x, y in tuples_list}
+    elements_dict = {x: y for x, y in tuples_list if y <= 40000}
 
     reconstructed_tuples = [(x, y) for x, y in elements_dict.items()]
 
@@ -45,6 +45,6 @@ pdb_ids = pick_uniform_tuples(all_pdb_ids, protein_subset)
 pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
 
 # Save the extracted pdb_ids to a new txt file called "protein_sample.txt"
-with open("protein_sample.txt", "w") as f:
+with open("protein_sample_40000.txt", "w") as f:
     for pdb_id in pdb_ids:
         f.write(f"{pdb_id}\n")

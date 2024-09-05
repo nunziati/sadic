@@ -39,9 +39,7 @@ def compute_indexes(method, solid, centers, reference_radius, **parameters):
         return oc_trees_range_query(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "kdtrees_voxel_scan_loop":
         return kd_trees_voxel_scan_loop(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
-    elif method == "kdtrees_voxel_scan_vector":
-        return kd_trees_voxel_scan_vector(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
-    
+
 
 def original(solid, centers, reference_radius, model):
     result = sadic_original_voxel(solid, model, reference_radius)
@@ -389,7 +387,7 @@ def kd_trees_voxel_scan_loop(solid, centers, reference_radius, extreme_coordinat
     
     grid_centers = cartesian_to_grid(centers, extreme_coordinates, resolution)
 
-    kdtree = KDTree_sklearn(grid_centers, leaf_size=4)
+    kdtree = KDTree_sklearn(grid_centers, leaf_size=1)
     print("wow3", flush=True)
 
     from tqdm import tqdm
@@ -402,7 +400,7 @@ def kd_trees_voxel_scan_loop(solid, centers, reference_radius, extreme_coordinat
 
     return depth_idx, dict()
 
-def kd_trees_voxel_scan_vector(solid, centers, reference_radius, extreme_coordinates, resolution):
+def kd_trees_scipy_voxel_scan_loop(solid, centers, reference_radius, extreme_coordinates, resolution):
     print("wow1", flush=True)
     sq_reference_radius = reference_radius ** 2
     sphere_grid_radius = ((2 * reference_radius / resolution) // 2).astype(np.int32)
@@ -422,13 +420,14 @@ def kd_trees_voxel_scan_vector(solid, centers, reference_radius, extreme_coordin
     
     grid_centers = cartesian_to_grid(centers, extreme_coordinates, resolution)
 
-    kdtree = KDTree_sklearn(grid_centers, leaf_size=10)
+    kdtree = KDTree(grid_centers, leafsize=1)
     print("wow3", flush=True)
 
-    near_centers = kdtree.query_radius(solid_points, r=sphere_grid_radius, return_distance=False)
-    
-    for near_center in near_centers:
-        count[near_center] += 1
+    from tqdm import tqdm
+
+    for idx, point in tqdm(enumerate(solid_points)):
+        near_centers = kdtree.query_radius([point], r=sphere_grid_radius, return_distance=False)[0]
+        count[near_centers] += 1
 
     depth_idx = 2 * (1 - count / sphere_int_volume)
 

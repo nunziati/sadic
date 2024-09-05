@@ -172,7 +172,7 @@ def main():
 
 
     # DA FARE
-    # nel metodo morfologico: mettere arrotondamento e verificare se cambia qualcosa
+    # nel metodo morfologico: mettere arrotondamento e verificare se cambia qualcosa.................FATTO
 
     # rifare metodo morfologico+traslata mettendo arrotondamento con risoluzione 0.5 e 0.35
     # metodo morfologico con risoluzione 0.5
@@ -184,7 +184,7 @@ def main():
     # tirare fuori un sample piccolo di proteine (30) da far girare con ResidueDepth
     
     # implementare roba rimanente con kdtree
-    
+
     voxel_centers = np.argwhere(image)
 
     values = image[voxel_centers[:, 0], voxel_centers[:, 1], voxel_centers[:, 2]]
