@@ -39,7 +39,10 @@ def compute_indexes(method, solid, centers, reference_radius, **parameters):
         return oc_trees_range_query(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "kdtrees_voxel_scan_loop":
         return kd_trees_voxel_scan_loop(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
+    elif method == "kd_trees_scipy_tree_comparison":
+        return kd_trees_scipy_tree_comparison(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
 
+    
 
 def original(solid, centers, reference_radius, model):
     result = sadic_original_voxel(solid, model, reference_radius)
