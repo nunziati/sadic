@@ -37,7 +37,7 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
             fill_space_method = "skimage",
             holes_removal_method = "basic_vectorized" if method is None else method,
             reference_radius_method = "basic_vectorized" if method is None else method,
-            indexes_computation_method = "basic_vectorized" # kd_trees_scipy_tree_comparison" # "kd_trees_scipy_tree_comparison translated_sphere_vectorized"
+            indexes_computation_method = "kd_trees_scipy_tree_comparison" # kd_trees_scipy_tree_comparison" # "kd_trees_scipy_tree_comparison translated_sphere_vectorized"
         )
     
     alignment_method = single_methods["alignment_method"]

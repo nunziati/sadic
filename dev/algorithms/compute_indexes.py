@@ -358,7 +358,7 @@ def kd_trees_scipy_tree_comparison(solid, centers, reference_radius, extreme_coo
     solid_points = np.array(np.nonzero(solid)).T
     grid_centers = cartesian_to_grid(centers, extreme_coordinates, resolution)
     kdtree = KDTree(solid_points, leafsize=200)
-    query_kdtree = KDTree(centers, leafsize=40)
+    query_kdtree = KDTree(grid_centers, leafsize=40)
     print("wow3", flush=True)
     
     results = query_kdtree.query_ball_tree(kdtree, sphere_grid_radius)
