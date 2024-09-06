@@ -16,9 +16,9 @@ SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
 
-DEFAULT_INPUT = "protein_sample.txt"
+DEFAULT_INPUT = "protein_sample_40000.txt"
 DEFAULT_EXPERIMENT_FOLDER = "experiments"
-DEFAULT_EXPERIMENT_NAME = "aligned_spacefill_translated_sphere"
+DEFAULT_EXPERIMENT_NAME = "aligned_translated_sphere_0.5"
 DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = "translated_sphere_vectorized"
 DEFAULT_VERBOSE = False
@@ -31,10 +31,10 @@ DEFAULT_NUM_PROCESSES = 2
 ############################## CONFIGURE METHODS ##############################
 ALIGNMENT_METHOD = "basic"
 DISCRETIZATION_METHOD = "basic_vectorized"
-FILL_SPACE_METHOD = "skimage"
+FILL_SPACE_METHOD = "none"
 HOLES_REMOVAL_METHOD = "basic_vectorized"
 REFERENCE_RADIUS_METHOD = "basic_vectorized"
-INDEXES_COMPUTATION_METHOD = "translated_sphere_vectorized"
+INDEXES_COMPUTATION_METHOD = "translated_sphere_vectorized" # "translated_sphere_vectorized"
 ###############################################################################
 
 
