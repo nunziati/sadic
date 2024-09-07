@@ -9,16 +9,12 @@ def fill_space(method, solid, **parameters):
     - complexity_variables: dict
     """
 
-    last_method = scipy
-
     if method == "none":
         return solid, dict(protein_int_volume=np.sum(solid))
     elif method == "scipy":
         return scipy(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
     elif method == "skimage":
         return skimage(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
-    else:
-        return last_method(solid, resolution=parameters["resolution"], probe_radius=parameters["probe_radius"])
 
 def create_spherical_structuring_element(radius):
     # Calculate the size of the grid
@@ -60,7 +56,9 @@ def skimage(solid, resolution, probe_radius):
     # print(f"Number of components: {n_components}")
 
     # Create the spherical structuring element
-    structuring_element = ball(np.round(probe_radius / resolution))
+    size = np.round(probe_radius / resolution).astype(np.int32)
+
+    structuring_element = ball(size)
 
     structuring_element[:,:,:] = 1
 
@@ -72,7 +70,12 @@ def skimage(solid, resolution, probe_radius):
     # o3d.visualization.draw_geometries([pcd])
 
     # Fill the space
-    solid = binary_closing(solid, structuring_element)
+
+    expanded_solid = np.zeros((solid.shape[0] + 2*size, solid.shape[1] + 2*size, solid.shape[2] + 2*size), dtype=np.int32)
+
+    expanded_solid[size:-size, size:-size, size:-size] = solid
+
+    solid = binary_closing(expanded_solid, structuring_element, mode="min")[size:-size, size:-size, size:-size]
 
     # connected_components, n_components = label(solid)
 
