@@ -21,8 +21,12 @@ def compute_indexes(method, solid, centers, reference_radius, **parameters):
         return basic(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "basic_vectorized":
         return basic_vectorized(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
+    elif method == "basic_vectorized_0.5":
+        return basic_vectorized(solid, centers, reference_radius+0.5*parameters["resolution"], parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "translated_sphere_vectorized":
         return translated_sphere_vectorized(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
+    elif method == "translated_sphere_vectorized_0.5":
+        return translated_sphere_vectorized(solid, centers, reference_radius+0.5*parameters["resolution"], parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "coeurjolly_translated_sphere":
         return translated_sphere_vectorized(solid, centers, reference_radius, parameters["extreme_coordinates"], parameters["resolution"])
     elif method == "octrees":

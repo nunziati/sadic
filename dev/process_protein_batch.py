@@ -16,25 +16,25 @@ SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
 
-DEFAULT_INPUT = "protein_sample_40000.txt"
-DEFAULT_EXPERIMENT_FOLDER = "experiments"
-DEFAULT_EXPERIMENT_NAME = "aligned_translated_sphere_0.5"
+DEFAULT_INPUT = "protein_sample_40000_subsample_new.txt"
+DEFAULT_EXPERIMENT_FOLDER = "new_experiments"
+DEFAULT_EXPERIMENT_NAME = "new_subsample_final_30_0.5" # "aligned_inflated_reconstructed_sphere_0.5"
 DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = "translated_sphere_vectorized"
 DEFAULT_VERBOSE = False
-DEFAULT_SUBSET = 1000
+DEFAULT_SUBSET = 30 # 1000
 DEFAULT_UNIFORM = True
 DEFAULT_RESUME = -1
 DEFAULT_NUM_PROCESSES = 2
 
 
 ############################## CONFIGURE METHODS ##############################
-ALIGNMENT_METHOD = "basic"
-DISCRETIZATION_METHOD = "basic_vectorized"
-FILL_SPACE_METHOD = "none"
+ALIGNMENT_METHOD = "approximate"
+DISCRETIZATION_METHOD = "basic_vectorized_0.5"
+FILL_SPACE_METHOD = "skimage_ball_0.5"
 HOLES_REMOVAL_METHOD = "basic_vectorized"
-REFERENCE_RADIUS_METHOD = "basic_vectorized"
-INDEXES_COMPUTATION_METHOD = "translated_sphere_vectorized" # "translated_sphere_vectorized"
+REFERENCE_RADIUS_METHOD = "translated_sphere_vectorized"
+INDEXES_COMPUTATION_METHOD = "translated_sphere_vectorized_0.5" # "basic_vectorized_0.5"
 ###############################################################################
 
 
@@ -80,6 +80,12 @@ OUTPUT_FILE_HEADER = (
     "std_idx_visited_voxel_map"
     )
 
+# OUTPUT_FILE_HEADER = (
+#     "PDB_ID",
+#     "N",
+#     "n",
+# )
+
 def parse_args():
     parser = argparse.ArgumentParser(description="SADIC: Solvent Accessible Depth Index Calculator")
     parser.add_argument("--input", type=str, default=DEFAULT_INPUT, help="Input PDB file or PDB ID")
@@ -109,6 +115,15 @@ def process_single_protein_and_extract_output(pdb_id, resolution=0.3, method=Non
                                         "indexes_computation_method": INDEXES_COMPUTATION_METHOD
                                  })
         
+        # output_tuple = (
+        #     pdb_id.strip(),
+        #     output["complexity_variables"]["N"],
+        #     output["complexity_variables"]["n"],
+        # )
+
+        # return output_tuple
+    
+
         depth_indexes_path = os.path.join(experiment_folder, "depth_indexes", f"{pdb_id.strip()}.npy")
         p_disc_path = os.path.join(experiment_folder, "discretization", "p", f"{pdb_id.strip()}.npy")
         disc_voxel_operations_map_path = os.path.join(experiment_folder, "discretization", "voxel_operations_map", f"{pdb_id.strip()}.npy")

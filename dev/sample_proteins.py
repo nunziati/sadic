@@ -3,10 +3,10 @@ import numpy as np
 
 
 input_arg = "proteins_dataset_PDB_with_protein_size.csv"
-protein_subset = 1000
+protein_subset = 5001
 
 def pick_uniform_tuples(tuples_list, N):
-    elements_dict = {x: y for x, y in tuples_list if y <= 40000}
+    elements_dict = {x: y for x, y in tuples_list if y <= 5000}
 
     reconstructed_tuples = [(x, y) for x, y in elements_dict.items()]
 
@@ -42,9 +42,16 @@ all_pdb_ids = [(pdb_id, int(atom_count)) for pdb_id, atom_count in all_pdb_ids]
 
 pdb_ids = pick_uniform_tuples(all_pdb_ids, protein_subset)
 
-pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
+# pdb_ids = [pdb_id[0] for pdb_id in pdb_ids]
 
-# Save the extracted pdb_ids to a new txt file called "protein_sample.txt"
-with open("protein_sample_40000.txt", "w") as f:
-    for pdb_id in pdb_ids:
-        f.write(f"{pdb_id}\n")
+# Save csv file
+with open("protein_sample_5000.csv", "w") as f:
+    writer = csv.writer(f)
+    writer.writerow(["pdb_id", "atom_count"])
+    for pdb_id, atom_count in pdb_ids:
+        writer.writerow([pdb_id, atom_count])
+
+# # Save the extracted pdb_ids to a new txt file called "protein_sample.txt"
+# with open("protein_sample_gnn.txt", "w") as f:
+#     for pdb_id in pdb_ids:
+#         f.write(f"{pdb_id}\n")

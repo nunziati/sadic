@@ -4,6 +4,7 @@ from typing import Sequence
 import re
 from copy import deepcopy
 
+import pandas
 from biopandas.pdb import PandasPdb as pd
 from biopandas.pdb.pandas_pdb import PandasPdb
 from Bio.PDB.Structure import Structure
@@ -313,6 +314,8 @@ class PDBEntity(Repr):
         arg: str | PandasPdb | Structure,
         mode: str = "infer",
         vdw_radii: None | dict[str, float] = None,
+        atom_refs = None,
+        atom_refs_file = None
     ) -> None:
         r"""Builds the PDBEntity object based on the protein given in arg.
 
@@ -370,6 +373,14 @@ class PDBEntity(Repr):
                     )
 
                 PDBEntity.vdw_radii[atom_type] = vdw_radii[atom_type]
+
+        if atom_refs is not None:
+            self.atom_refs = atom_refs
+        elif atom_refs_file is not None:
+            ref_df = pandas.read_csv(atom_refs)
+            self.atom_refs = ref_df["original_index"]
+        else:
+            self.atom_refs = None
 
         self.build(arg, mode)
 
@@ -477,6 +488,20 @@ class PDBEntity(Repr):
                 too long loops. Defaults to 1000.
         """
         self.code = self.entity.df["OTHERS"]["entry"][0][-4:]
+
+        # Modify the model in a way that only the atoms with alt_loc of "" or "A" are kept
+        df = self.entity.df
+
+        atom_series = df["ATOM"]
+        df["ATOM"]["atom_ref"] = atom_series["chain_id"] + ":" + atom_series["residue_name"] + ":" + atom_series["residue_number"].astype(str) + atom_series["alt_loc"].apply(lambda x: ":" + x.replace(" ", "") if x != "" else "") + ":" + atom_series["atom_name"]
+
+        if self.atom_refs is not None:
+            df["ATOM"] = df["ATOM"][df["ATOM"]["atom_ref"].isin(self.atom_refs)]
+        else:
+            df["ATOM"] = df["ATOM"][df["ATOM"]["alt_loc"].isin(["", "A"])]
+
+        self.entity._df = df
+
         for model_index in range(1, max_nmodels + 1):
             if self.entity.get_model(model_index).df["ATOM"].empty:
                 break

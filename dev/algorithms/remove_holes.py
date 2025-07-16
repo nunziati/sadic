@@ -27,14 +27,22 @@ def basic(solid):
 
     original_voxels = np.sum(solid)
     
+    # Pad the solid array to avoid boundary issues
+    solid = np.pad(solid, pad_width=1, mode='constant', constant_values=0)
+
     connected_components, n_components = label(1 - solid)
+
+    background_component_label = connected_components[0, 0, 0]
 
     # for i in range(1, n_components + 1):
     #     count = np.sum(connected_components == i)
     #     print(f"Component {i}: {count} voxels")
 
-    solid = (connected_components != 1).astype(np.int32)
+    solid = (connected_components != background_component_label).astype(np.int32)
     
+    # Remove the padding
+    solid = solid[1:-1, 1:-1, 1:-1]
+
     # holes = connected_components * (np.logical_and(connected_components != 0, connected_components != 1))
 
     # voxel_centers = np.argwhere(holes)
