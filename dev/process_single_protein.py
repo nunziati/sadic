@@ -17,7 +17,7 @@ from algorithms.compute_indexes import compute_indexes
 
 from mylogging import TaskPrinter
 
-DEFAULT_INPUT = "4ins"
+DEFAULT_INPUT = "4fp8"
 DEFAULT_RESOLUTION = 0.5
 DEFAULT_METHOD = None
 DEFAULT_VERBOSE = True
@@ -81,8 +81,8 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
 
     atoms = model.get_centers()
 
-    # plot_3d_points(atoms)
-    # input()
+    plot_3d_points(atoms)
+    input()
     
     if fill_space_method == "none":
         radii = model.get_radii(probe_radius = None)
@@ -93,6 +93,9 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
     time_align_start = time.time()
     atoms, _, complexity_variables_alignment = align(alignment_method, atoms)
     time_align_end = time.time()
+
+    plot_3d_points(atoms)
+    input()
 
     section = False
 
@@ -223,14 +226,22 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
             plt.savefig(filename, bbox_inches='tight', pad_inches=-0.6)
             plt.show()
 
+    voxels = np.argwhere(solid)
+    plot_3d_points(voxels)
+    input()
+
     print_task("Space filling")
     space_fill_time_start = time.time()
     if fill_space_method != "none":
-        print("Fillo")
+        print("Filling space...")
         solid, complexity_variables_space_filling = fill_space(fill_space_method, solid, resolution=resolution, probe_radius=PDBEntity.vdw_radii['O'])
     else:
         complexity_variables_space_filling = dict(protein_int_volume=complexity_variables_discretization["protein_int_volume"])
     space_fill_time_end = time.time()
+
+    voxels = np.argwhere(solid)
+    plot_3d_points(voxels)
+    input()
 
     if section:
         plot_solid(solid, "solid_spacefill.pdf")
@@ -245,6 +256,10 @@ def process_protein(input_arg, vdw_radii = None, resolution = 0.3, method=None, 
     holes_removal_time_start = time.time()
     solid, complexity_variables_holes_removal = remove_holes(holes_removal_method, solid)
     holes_removal_time_end = time.time()
+
+    voxels = np.argwhere(solid)
+    plot_3d_points(voxels)
+    input()
 
     print_task("Finding reference radius")
     reference_radius_time_start = time.time()
@@ -290,6 +305,7 @@ def main():
     method = args.method
     verbose = args.verbose
 
+    print("Inizio a processare la proteina")
     output = process_protein(input_arg, resolution=resolution, method=method, verbose=verbose)
 
     depth_indexes_path = os.path.join("new_experiments", "single_sadic", "depth_indexes", f"{input_arg.strip()}.npy")
