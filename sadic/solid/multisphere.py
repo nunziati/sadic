@@ -1,7 +1,7 @@
 r"""Defines the Multisphere class."""
 
 from collections.abc import Sequence
-from typing import Type
+from typing import Type, Union, Optional
 
 from Bio.PDB.Structure import Structure
 import numpy as np
@@ -65,8 +65,8 @@ class Multisphere(Solid):
 
     def __init__(
         self,
-        arg1: (Sequence[Sphere] | Model | Structure | NDArray[np.float32]),
-        arg2: None | NDArray[np.float32] = None,
+        arg1: Union[Sequence[Sphere], Model, Structure, NDArray[np.float32]],
+        arg2: Union[None, NDArray[np.float32]] = None,
     ) -> None:
         r"""Initializes a multisphere based on the given argument(s).
 
@@ -91,7 +91,7 @@ class Multisphere(Solid):
         """
         self.centers: NDArray[np.float32]
         self.radii: NDArray[np.float32]
-        self.extreme_coordinates: NDArray[np.float32] | None
+        self.extreme_coordinates: Optional[NDArray[np.float32]]
 
         if arg2 is None:
             if isinstance(arg1, Sequence):
@@ -243,7 +243,7 @@ class Multisphere(Solid):
             of the sphere.
         """
         # TO DO: implement the get_volume option
-        arg: NDArray[np.float32] | Sphere = args[0]
+        arg: Union[NDArray[np.float32], Sphere] = args[0]
         get_volumes: bool = kwargs.get("get_volumes", False)
         if isinstance(arg, Sphere):
             return self.sphere_is_inside(arg, get_volumes=get_volumes)
@@ -274,7 +274,7 @@ class Multisphere(Solid):
         ).any(axis=1)
 
     def sphere_is_inside(
-        self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False
+        self, sphere: Sphere, quantizer_arg: Optional[Quantizer] = None, get_volumes: bool = False
     ) -> NDArray[np.bool_]:
         r"""Checks if a sphere is inside the multisphere.
 

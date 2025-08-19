@@ -1,6 +1,6 @@
 r"""API functions for execution of sadic algorithm on a protein."""
 
-from typing import Any, Sequence
+from typing import Any, Sequence, Union, Optional
 import time
 
 import numpy as np
@@ -30,17 +30,16 @@ representation_options: dict[str, dict[str, Any]] = {
 
 
 def sadic(
-    input_arg: str | PandasPdb | Structure,
+    input_arg: Union[str, PandasPdb, Structure],
     input_mode: str = 'infer',
-    model_indexes: None | Sequence[int] = None,
-    filter_by: None
-    | dict[str, str | int | Sequence[str] | Sequence[int]]
-    | tuple[NDArray[np.float32], float]
-    | NDArray[np.float32] = None,
-    probe_radius: None | int | float = None,
-    vdw_radii: None | dict[str, float] = None,
+    model_indexes: Optional[Sequence[int]] = None,
+    filter_by: Optional[Union[dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+    tuple[NDArray[np.float32], float],
+    NDArray[np.float32]]] = None,
+    probe_radius: Optional[Union[int, float]] = None,
+    vdw_radii: Optional[dict[str, float]] = None,
     representation: str = "voxel",
-    resolution: None | int | float = 0.3,
+    resolution: Optional[Union[int, float]] = 0.3,
     debug: bool = False,
 ) -> SadicEntityResult:
     r"""Compute the SADIC depth index of a protein.
@@ -111,7 +110,7 @@ def sadic(
     start_time = time.time()
 
     # retrieve probe_radius
-    original_probe_radius: None | float | int = probe_radius
+    original_probe_radius: Optional[Union[float, int]] = probe_radius
     fixed_probe_radius: bool = False
     if probe_radius is not None:
         if not isinstance(probe_radius, int) and not isinstance(probe_radius, float):
@@ -131,7 +130,7 @@ def sadic(
 
             fixed_probe_radius = True
 
-    original_model_indexes: None | Sequence[int] = model_indexes
+    original_model_indexes: Optional[Sequence[int]] = model_indexes
     model_indexes = model_indexes if model_indexes is not None else range(1, protein.nmodels + 1)
     results: dict[int, SadicModelResult] = {}
     for model_index in model_indexes:

@@ -1,6 +1,6 @@
 r"""Definition of functions to compute the max radius sphere in a multisphere-shaped solid."""
 
-from typing import Type
+from typing import Type, Union, Optional
 
 from numpy.typing import NDArray
 import numpy as np
@@ -18,8 +18,8 @@ default_quantizer_kwargs: dict[str, int] = {
 
 def find_candidate_max_radius_points(
     multisphere: Multisphere,
-    quantizer_arg: SphericalQuantizer | None = None,
-    min_radius: float | None = None,
+    quantizer_arg: Optional[SphericalQuantizer] = None,
+    min_radius: Optional[float] = None,
     multiplier: float = 2.0,
     exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
 ) -> tuple[NDArray[np.float32], float]:
@@ -95,8 +95,8 @@ def find_candidate_max_radius_points(
 
 def find_max_radius_point(
     multisphere: Multisphere,
-    quantizer_arg: SphericalQuantizer | None = None,
-    min_radius: float | None = None,
+    quantizer_arg: Optional[SphericalQuantizer] = None,
+    min_radius: Optional[float] = None,
     multiplier: float = 2.0,
     exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
     bisection_threshold: float = 0.3,
@@ -173,8 +173,8 @@ def find_max_radius_point(
 
 def reduce_multisphere_step(
     multisphere: Multisphere,
-    quantizer_arg: SphericalQuantizer | None = None,
-    min_radius: float | None = None,
+    quantizer_arg: Optional[SphericalQuantizer] = None,
+    min_radius: Optional[float] = None,
     multiplier: float = 2.0,
     exclude_points: NDArray[np.int32] = np.array([], dtype=np.int32),
     bisection_threshold: float = 0.3,
@@ -245,8 +245,8 @@ def reduce_multisphere_step(
 
 def reduce_multisphere(
     multisphere: Multisphere,
-    quantizer_arg: SphericalQuantizer | None = None,
-    min_radius: float | None = None,
+    quantizer_arg: Optional[SphericalQuantizer] = None,
+    min_radius: Optional[float] = None,
     multiplier: float = 2.0,
     bisection_threshold: float = 0.3,
 ) -> Multisphere:

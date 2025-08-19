@@ -1,5 +1,7 @@
 r"""Defines the Sphere class."""
 
+from typing import Optional
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -64,7 +66,7 @@ class Sphere(Solid):
             A numpy array of booleans representing whether the point(s) is inside the sphere.
         """
         points: NDArray[np.float32] = args[0]
-        radii: NDArray[np.float32] | None = kwargs.get("radii", None)
+        radii: Optional[NDArray[np.float32]] = kwargs.get("radii", None)
         if radii is None:
             return ((points - self.center) ** 2).sum(axis=1) <= self.radius**2
 

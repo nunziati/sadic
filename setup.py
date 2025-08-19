@@ -52,6 +52,7 @@ setup(
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],

@@ -3,7 +3,7 @@ r"""Defines the VoxelSolid class."""
 from __future__ import annotations
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Callable, Type
+from typing import Callable, Type, Union, Optional
 
 from tqdm import tqdm
 from Bio.PDB.Structure import Structure
@@ -85,11 +85,11 @@ class VoxelSolid(Solid):
 
     def __init__(
         self,
-        arg1: (Sequence[Sphere] | Model | Structure | NDArray[np.float32]),
-        arg2: None | NDArray[np.float32] = None,
+        arg1: Union[Sequence[Sphere], Model, Structure, NDArray[np.float32]],
+        arg2: Optional[NDArray[np.float32]] = None,
         resolution: float = 0.3,
-        extreme_coordinates: None | NDArray[np.float32] = None,
-        align_with: None | VoxelSolid = None,
+        extreme_coordinates: Optional[NDArray[np.float32]] = None,
+        align_with: Optional[VoxelSolid] = None,
     ) -> None:
         r"""Initializes the VoxelSolid building it from a given argument.
 
@@ -136,8 +136,8 @@ class VoxelSolid(Solid):
         self,
         multisphere: Multisphere,
         resolution: float = 0.3,
-        extreme_coordinates: None | NDArray[np.float32] = None,
-        align_with: "None | VoxelSolid" = None,
+        extreme_coordinates: Optional[NDArray[np.float32]] = None,
+        align_with: Optional["VoxelSolid"] = None,
     ) -> None:
         r"""Builds the VoxelSolid from a Multisphere.
 
@@ -275,7 +275,7 @@ class VoxelSolid(Solid):
         new_voxel_solid.remove_holes_(*args, **kwargs)
         return new_voxel_solid
 
-    def edt(self, sampling: None | float = None) -> NDArray[np.float32]:
+    def edt(self, sampling: Optional[float] = None) -> NDArray[np.float32]:
         r"""Computes the euclidean distance transform of the solid.
 
         Returns (NDArray[np.float32]):
@@ -337,7 +337,7 @@ class VoxelSolid(Solid):
             or for each representative point of the sphere.
         """
         # TO DO: implement the get_volume option
-        arg: NDArray[np.float32] | Sphere = args[0]
+        arg: Union[NDArray[np.float32], Sphere] = args[0]
         get_volumes: bool = kwargs.get("get_volumes", False)
         if isinstance(arg, Sphere):
             return self.sphere_is_inside(arg, get_volumes=get_volumes)
@@ -390,7 +390,7 @@ class VoxelSolid(Solid):
         return output
 
     def sphere_is_inside(
-        self, sphere: Sphere, quantizer_arg: Quantizer | None = None, get_volumes: bool = False
+        self, sphere: Sphere, quantizer_arg: Optional[Quantizer] = None, get_volumes: bool = False
     ) -> NDArray[np.bool_]:
         r"""Checks if a sphere is inside the multisphere.
 

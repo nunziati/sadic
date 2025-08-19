@@ -1,7 +1,7 @@
 r"""Result of the SADIC algorithm for a single model of a protein and for multiple models."""
 
 from __future__ import annotations
-from typing import Any, Sequence
+from typing import Any, Sequence, Union, Optional
 from copy import deepcopy
 import os
 
@@ -70,10 +70,13 @@ class SadicModelResult(Repr):
 
     def get_depth_index(
         self,
-        filter_by: None
-        | dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32] = None,
+        filter_by: Optional[
+            Union[
+                dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+                tuple[NDArray[np.float32], float],
+                NDArray[np.float32]
+            ]
+        ] = None,
         get_index: bool = False,
     ):
         r"""Return the depth index of the atoms of the protein.
@@ -119,10 +122,13 @@ class SadicModelResult(Repr):
 
     def filter_(
         self,
-        filter_by: None
-        | dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32] = None,
+        filter_by: Optional[
+            Union[
+                dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+                tuple[NDArray[np.float32], float],
+                NDArray[np.float32]
+            ]
+        ] = None,
     ) -> None:
         r"""Filter (inplace) the entity inside the result object.
 
@@ -155,10 +161,13 @@ class SadicModelResult(Repr):
 
     def filter(
         self,
-        filter_by: None
-        | dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32] = None,
+        filter_by: Optional[
+            Union[
+                dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+                tuple[NDArray[np.float32], float],
+                NDArray[np.float32]
+            ]
+        ] = None,
     ) -> SadicModelResult:
         r"""Filter the entity inside the result object according to the filter_by argument.
 
@@ -182,7 +191,7 @@ class SadicModelResult(Repr):
         result_copy.filter_(filter_by)
         return result_copy
 
-    def aggregate_atoms_(self, atom_aggregation: None | tuple[str, str] = None) -> None:
+    def aggregate_atoms_(self, atom_aggregation: Optional[tuple[str, str]] = None) -> None:
         r"""Aggregate (inplace) the atoms of the protein according to the atom_aggregation argument.
 
         Args:
@@ -230,7 +239,7 @@ class SadicModelResult(Repr):
         if model is None:
             raise ValueError("The model is not valid.")
 
-        mapping: dict[str | int, tuple[int]] = {
+        mapping: dict[Union[str, int], tuple[int]] = {
             key: tuple(model.df["ATOM"].loc[model.df["ATOM"][criterion] == key, "atom_number"])
             for key in model.df["ATOM"][criterion].unique()
         }
@@ -251,7 +260,7 @@ class SadicModelResult(Repr):
 
     def aggregate_atoms(
         self,
-        atom_aggregation: None | tuple[str, str] = None,
+        atom_aggregation: Optional[tuple[str, str]] = None,
     ) -> SadicModelResult:
         r"""Aggregate (inplace) the atoms of the protein according to the atom_aggregation argument.
 
@@ -304,13 +313,16 @@ class SadicEntityResult(Repr):
 
     def get_depth_index(
         self,
-        filter_by: None
-        | dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32] = None,
+        filter_by: Optional[
+            Union[
+                dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+                tuple[NDArray[np.float32], float],
+                NDArray[np.float32]
+            ]
+        ] = None,
         get_index: bool = False,
-        model_aggregation: str | Sequence[str] = "mean",
-        atom_aggregation: None | tuple[str, str] = None,
+        model_aggregation: Union[str, Sequence[str]] = "mean",
+        atom_aggregation: Optional[tuple[str, str]] = None,
         model_aggregation_before: bool = False,
     ):
         r"""Return the depth index of the atoms of the protein.
@@ -441,8 +453,8 @@ class SadicEntityResult(Repr):
 
     def save_pdb(
         self,
-        path: None | str = None,
-        replaced_column: None | str = "b_factor",
+        path: Optional[str] = None,
+        replaced_column: Optional[str] = "b_factor",
         model_aggregation: str = "mean",
         gzip: bool = False,
         append_newline: bool = True,
@@ -503,7 +515,7 @@ class SadicEntityResult(Repr):
         pdb.to_pdb(path, gz=gzip, append_newline=append_newline)
 
     def save_txt(
-        self, path: None | str = None, model_aggregation: str = "mean", file_format: str = "sadicv1"
+        self, path: Optional[str] = None, model_aggregation: str = "mean", file_format: str = "sadicv1"
     ) -> None:
         r"""Save the entity of the protein as a txt file.
 
@@ -555,10 +567,13 @@ class SadicEntityResult(Repr):
 
     def filter_(
         self,
-        filter_by: None
-        | dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32] = None,
+        filter_by: Optional[
+            Union[
+                dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+                tuple[NDArray[np.float32], float],
+                NDArray[np.float32]
+            ]
+        ] = None,
     ) -> None:
         r"""Filter (inplace) the entity inside the result object.
 
@@ -583,10 +598,13 @@ class SadicEntityResult(Repr):
 
     def filter(
         self,
-        filter_by: None
-        | dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32] = None,
+        filter_by: Optional[
+            Union[
+                dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+                tuple[NDArray[np.float32], float],
+                NDArray[np.float32]
+            ]
+        ] = None,
     ) -> SadicEntityResult:
         r"""Filter the entity inside the result object according to the filter_by argument.
 
@@ -613,7 +631,7 @@ class SadicEntityResult(Repr):
         result_copy.filter_(filter_by)
         return result_copy
 
-    def aggregate_atoms_(self, atom_aggregation: None | tuple[str, str] = None) -> None:
+    def aggregate_atoms_(self, atom_aggregation: Optional[tuple[str, str]] = None) -> None:
         r"""Aggregate (inplace) the atoms of the entity according to the atom_aggregation argument.
 
         Args:
@@ -634,7 +652,7 @@ class SadicEntityResult(Repr):
 
     def aggregate_atoms(
         self,
-        atom_aggregation: None | tuple[str, str] = None,
+        atom_aggregation: Optional[tuple[str, str]] = None,
     ) -> SadicEntityResult:
         r"""Aggregate the atoms of the entity according to the atom_aggregation argument.
 
@@ -661,7 +679,7 @@ class SadicEntityResult(Repr):
     def aggregate_models(
         self,
         model_aggregation: str = "mean",
-        list_aggregation: None | dict = None,
+        list_aggregation: Optional[dict] = None,
         concatenate_aggregation=None,
     ):
         r"""Aggregate the models of the entity and return a single summary model result.

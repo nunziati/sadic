@@ -1,6 +1,7 @@
 r"""Defines the Quantizer abstract class and its specialized subclasses."""
 
 from abc import ABC, abstractmethod
+from typing import Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -123,7 +124,7 @@ class RegularStepsCartesianQuantizer(CartesianQuantizer):
             Returns the representative points and volumes of the quantized solid.
     """
 
-    def __init__(self, steps_number: int | tuple[int, int, int]) -> None:
+    def __init__(self, steps_number: Union[int, tuple[int, int, int]]) -> None:
         r"""Initializes the quantizer object with the given number of steps along each dimension.
 
         Args:
@@ -211,7 +212,7 @@ class RegularSizeCartesianQuantizer(CartesianQuantizer):
             Returns the representative points and volumes of the quantized solid.
     """
 
-    def __init__(self, cell_size: float | tuple[float, float, float]) -> None:
+    def __init__(self, cell_size: Union[float, tuple[float, float, float]]) -> None:
         r"""Initializes the quantizer object with the given cell size along each dimension.
 
         To be implemented.

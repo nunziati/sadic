@@ -1,6 +1,6 @@
 r"""Definition of functions to compute the sadic depth indexes of the atoms of a protein."""
 
-from typing import Type
+from typing import Type, Union, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -23,7 +23,7 @@ default_quantizer_kwargs: dict[str, int] = {
 
 
 def sadic_cubes(
-    protein_multisphere: Multisphere, probe_radius: float, steps_number: int | tuple[int, int, int]
+    protein_multisphere: Multisphere, probe_radius: float, steps_number: Union[int, tuple[int, int, int]]
 ) -> tuple[NDArray[np.float32], int]:
     r"""Computes the saidc depth indexes of the atoms of a protein.
 
@@ -90,7 +90,7 @@ def sadic_cubes(
 
 
 def sadic_cubes_optimized(
-    protein_multisphere: Multisphere, probe_radius: float, steps_number: int | tuple[int, int, int]
+    protein_multisphere: Multisphere, probe_radius: float, steps_number: Union[int, tuple[int, int, int]]
 ) -> tuple[NDArray[np.float32], int]:
     r"""Computes the saidc depth indexes of the atoms of a protein.
 
@@ -157,7 +157,7 @@ def sadic_cubes_optimized(
 
 
 def sadic_sphere(
-    protein_multisphere: Multisphere, probe_radius: float, steps_number: int | tuple[int, int, int]
+    protein_multisphere: Multisphere, probe_radius: float, steps_number: Union[int, tuple[int, int, int]]
 ) -> tuple[NDArray[np.float32], int]:
     r"""Computes the saidc depth indexes of the atoms of a protein.
 
@@ -217,7 +217,7 @@ def sadic_sphere(
 
 
 def sadic_sphere_optimized(
-    protein_multisphere: Multisphere, probe_radius: float, steps_number: int | tuple[int, int, int]
+    protein_multisphere: Multisphere, probe_radius: float, steps_number: Union[int, tuple[int, int, int]]
 ) -> tuple[NDArray[np.float32], int]:
     r"""Computes the saidc depth indexes of the atoms of a protein.
 
@@ -280,7 +280,7 @@ def sadic_sphere_optimized(
 
 
 def sadic_norm(
-    protein_multisphere: Multisphere, probe_radius: float, steps_number: int | tuple[int, int, int]
+    protein_multisphere: Multisphere, probe_radius: float, steps_number: Union[int, tuple[int, int, int]]
 ) -> tuple[NDArray[np.float32], int]:
     r"""Compute the saidc depth indexes of the atoms of a protein.
 
@@ -340,7 +340,7 @@ def sadic_norm(
 
 
 def sadic_original(
-    protein_multisphere: Multisphere, probe_radius: float, steps_number: int | tuple[int, int, int]
+    protein_multisphere: Multisphere, probe_radius: float, steps_number: Union[int, tuple[int, int, int]]
 ) -> tuple[NDArray[np.float32], int]:
     r"""Compute the saidc depth indexes of the atoms of a protein.
 
@@ -393,7 +393,7 @@ def sadic_original(
 
 
 def sadic_one_shot(
-    protein_multisphere: Multisphere, probe_radius: float, steps_number: int | tuple[int, int, int]
+    protein_multisphere: Multisphere, probe_radius: float, steps_number: Union[int, tuple[int, int, int]]
 ) -> tuple[NDArray[np.float32], int]:
     r"""Compute the saidc depth indexes of the atoms of a protein.
 
@@ -420,11 +420,11 @@ def sadic_one_shot(
     points, volume = quantizer.get_points_and_volumes(sphere)
 
     centers: NDArray[np.float32]
-    radii: NDArray[np.float32 | np.float16]
+    radii: NDArray[Union[np.float32, np.float16]]
     centers, radii = protein_multisphere.get_all_centers_and_radii()
     radii = radii.reshape((-1, 1)).astype(np.float16)
 
-    augmented_centers: NDArray[np.float32 | np.float16] = (
+    augmented_centers: NDArray[Union[np.float32, np.float16]] = (
         (centers.reshape(1, -1, 3) - centers.reshape(-1, 1, 3)).reshape(-1, 3).astype(np.float16)
     )
 

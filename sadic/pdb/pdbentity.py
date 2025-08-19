@@ -1,6 +1,6 @@
 r"""Definition of the Model and PDBEntity class."""
 from __future__ import annotations
-from typing import Sequence
+from typing import Sequence, Union, Optional
 import re
 from copy import deepcopy
 
@@ -43,13 +43,13 @@ class Model(Repr):
             model_idx (int):
                 The index of the model to be used to build the Model object.
         """
-        self.model: PandasPdb | None = None
+        self.model: Optional[PandasPdb] = None
         self.code: str
         self.atom_indexes: NDArray[np.int32]
         self.atom_types: NDArray[np.string_]
         self.atoms: NDArray[np.float32]
-        self.radii: NDArray[np.float32] | None = None
-        self.last_probe_radius: float | None = None
+        self.radii: Optional[NDArray[np.float32]] = None
+        self.last_probe_radius: Optional[float] = None
 
         self.build(pdb_entity, model_idx)
 
@@ -85,7 +85,7 @@ class Model(Repr):
         """
         return self.atoms
 
-    def get_radii(self, probe_radius: float | None = None) -> NDArray[np.float32]:
+    def get_radii(self, probe_radius: Optional[float] = None) -> NDArray[np.float32]:
         r"""Returns the radii of the atoms in the PDBEntity object.
 
         Uses the probe_radius given in input to increase the atoms' radii, to account for the size
@@ -126,9 +126,9 @@ class Model(Repr):
 
     def filter_(
         self,
-        filter_by: dict[str, str | int | Sequence[str] | Sequence[int]]
-        | NDArray[np.float32]
-        | tuple[NDArray[np.float32], float],
+        filter_by: Union[dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+        NDArray[np.float32],
+        tuple[NDArray[np.float32], float]],
     ) -> None:
         r"""Filters the Model object inplace, based on the filter given in input.
 
@@ -194,9 +194,9 @@ class Model(Repr):
 
     def filter(
         self,
-        filter_arg: dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32],
+        filter_arg: Union[dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+        tuple[NDArray[np.float32], float],
+        NDArray[np.float32]],
     ) -> Model:
         r"""Filters the Model object, based on the filter given in input.
 
@@ -310,9 +310,9 @@ class PDBEntity(Repr):
 
     def __init__(
         self,
-        arg: str | PandasPdb | Structure,
+        arg: Union[str, PandasPdb, Structure],
         mode: str = "infer",
-        vdw_radii: None | dict[str, float] = None,
+        vdw_radii: Optional[dict[str, float]] = None,
     ) -> None:
         r"""Builds the PDBEntity object based on the protein given in arg.
 
@@ -352,7 +352,7 @@ class PDBEntity(Repr):
         self.entity: PandasPdb
         self.code: str
         self.models: dict[int, Model] = {}
-        self.last_probe_radius: float | None = None
+        self.last_probe_radius: Optional[float] = None
 
         if vdw_radii is not None:
             for atom_type in PDBEntity.vdw_radii:
@@ -374,7 +374,7 @@ class PDBEntity(Repr):
         self.build(arg, mode)
 
     def build(
-        self, arg: str | PandasPdb | Structure, mode: str = "infer", max_nmodels: int = 1000
+        self, arg: Union[str, PandasPdb, Structure], mode: str = "infer", max_nmodels: int = 1000
     ) -> None:
         r"""Builds the PDBEntity object based on the protein given in arg.
 
@@ -603,9 +603,9 @@ class PDBEntity(Repr):
 
     def filter_(
         self,
-        filter_by: dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32],
+        filter_by: Union[dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+        tuple[NDArray[np.float32], float],
+        NDArray[np.float32]],
     ) -> None:
         r"""Filters the Models of the PDBEntity object inplace, based on the filter given in input.
 
@@ -627,9 +627,9 @@ class PDBEntity(Repr):
 
     def filter(
         self,
-        filter_arg: dict[str, str | int | Sequence[str] | Sequence[int]]
-        | tuple[NDArray[np.float32], float]
-        | NDArray[np.float32],
+        filter_arg: Union[dict[str, Union[str, int, Sequence[str], Sequence[int]]],
+        tuple[NDArray[np.float32], float],
+        NDArray[np.float32]]
     ) -> PDBEntity:
         r"""Filters the Models of the PDBEntity object, based on the filter given in input.
 
