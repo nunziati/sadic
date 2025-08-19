@@ -260,7 +260,15 @@ class VoxelSolid(Solid):
         Computes the connected components of the solid and removes the components that are not
         connected to the main component.
         """
-        self.grid = label(self.grid.astype(np.int32))[0] != 0
+        solid = np.pad(self.grid.astype(np.int32), pad_width=1, mode='constant', constant_values=0)
+
+        connected_components, n_components = label(1 - solid)
+
+        background_component_label = connected_components[0, 0, 0]
+
+        solid = (connected_components != background_component_label).astype(np.int32)
+
+        self.grid = solid[1:-1, 1:-1, 1:-1].astype(np.bool_)
 
     def remove_holes(self, *args, **kwargs) -> VoxelSolid:
         r"""Removes the holes in the solid and returns a new solid.
