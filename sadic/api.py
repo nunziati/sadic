@@ -12,7 +12,7 @@ from sadic.solid import Solid, Multisphere, VoxelSolid
 from sadic.pdb import PDBEntity, Model, SadicModelResult, SadicEntityResult
 from sadic.algorithm.radius import find_max_radius_point, find_max_radius_point_voxel
 from sadic.algorithm.depth import sadic_sphere as sadic_multisphere
-from sadic.algorithm.depth import sadic_original_voxel as sadic_voxel
+from sadic.algorithm.depth import sadic_fast_voxel as sadic_voxel
 
 
 representation_options: dict[str, dict[str, Any]] = {
